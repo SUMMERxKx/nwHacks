@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { NavLink, useLocation } from "react-router-dom";
 import { 
-  ClipboardCheck, 
+  Home,
   MessageCircle, 
   TrendingUp, 
   Trophy, 
@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 const tabs = [
-  { path: '/', label: 'Check-In', icon: ClipboardCheck },
+  { path: '/', label: 'Home', icon: Home },
   { path: '/buddy', label: 'Buddy', icon: MessageCircle },
   { path: '/patterns', label: 'Patterns', icon: TrendingUp },
   { path: '/wins', label: 'Wins', icon: Trophy },

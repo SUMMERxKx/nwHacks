@@ -13,6 +13,7 @@ import {
   CheckInEntry,
   formatDateFull 
 } from "@/lib/mockData";
+import { getCheckInByDate, saveCheckIn } from "@/lib/firebaseService";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -28,6 +29,7 @@ export default function CheckIn() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Ratings
   const [stress, setStress] = useState(5);
@@ -47,33 +49,57 @@ export default function CheckIn() {
   const existingEntry = mockCheckIns.find(c => c.date === dateKey);
   const isToday = dateKey === new Date().toISOString().split('T')[0];
 
-  // Load existing entry
+  // Load existing entry from Firebase
+
   useEffect(() => {
-    if (existingEntry) {
-      setStress(existingEntry.ratings.stress);
-      setEnergy(existingEntry.ratings.energy);
-      setMood(existingEntry.ratings.mood);
-      setFocus(existingEntry.ratings.focus);
-      setProud(existingEntry.prompts.proud);
-      setStressed(existingEntry.prompts.stressed);
-      setChallenge(existingEntry.prompts.challenge);
-      setGrateful(existingEntry.prompts.grateful);
-      setIntention(existingEntry.prompts.intention);
-      setIsStarted(true);
-    } else {
-      // Reset for new day
-      setStress(5);
-      setEnergy(5);
-      setMood(5);
-      setFocus(5);
-      setProud("");
-      setStressed("");
-      setChallenge("");
-      setGrateful("");
-      setIntention("");
-      setIsStarted(false);
-    }
-    setHasUnsavedChanges(false);
+    const loadCheckIn = async () => {
+      setIsLoading(true);
+      try {
+        const firebaseData = await getCheckInByDate(dateKey);
+        if (firebaseData) {
+          setStress(firebaseData.ratings.stress);
+          setEnergy(firebaseData.ratings.energy);
+          setMood(firebaseData.ratings.mood);
+          setFocus(firebaseData.ratings.focus);
+          setProud(firebaseData.prompts.proud);
+          setStressed(firebaseData.prompts.stressed);
+          setChallenge(firebaseData.prompts.challenge);
+          setGrateful(firebaseData.prompts.grateful);
+          setIntention(firebaseData.prompts.intention);
+          setIsStarted(true);
+        } else if (existingEntry) {
+          setStress(existingEntry.ratings.stress);
+          setEnergy(existingEntry.ratings.energy);
+          setMood(existingEntry.ratings.mood);
+          setFocus(existingEntry.ratings.focus);
+          setProud(existingEntry.prompts.proud);
+          setStressed(existingEntry.prompts.stressed);
+          setChallenge(existingEntry.prompts.challenge);
+          setGrateful(existingEntry.prompts.grateful);
+          setIntention(existingEntry.prompts.intention);
+          setIsStarted(true);
+        } else {
+          // Reset for new day
+          setStress(5);
+          setEnergy(5);
+          setMood(5);
+          setFocus(5);
+          setProud("");
+          setStressed("");
+          setChallenge("");
+          setGrateful("");
+          setIntention("");
+          setIsStarted(false);
+        }
+      } catch (error) {
+        console.error("Error loading check-in:", error);
+      } finally {
+        setIsLoading(false);
+      }
+      setHasUnsavedChanges(false);
+    };
+
+    loadCheckIn();
   }, [dateKey]);
 
   const handleChange = () => {
@@ -82,16 +108,22 @@ export default function CheckIn() {
 
   const canSave = proud || stressed || challenge || grateful || intention;
 
-  const handleSave = () => {
-    // TODO: Save to Firebase Firestore
-    console.log('Saving check-in:', {
-      date: dateKey,
-      ratings: { stress, energy, mood, focus },
-      prompts: { proud, stressed, challenge, grateful, intention }
-    });
-    setHasUnsavedChanges(false);
-    setShowSavedBanner(true);
-    setTimeout(() => setShowSavedBanner(false), 3000);
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      await saveCheckIn({
+        date: dateKey,
+        ratings: { stress, energy, mood, focus },
+        prompts: { proud, stressed, challenge, grateful, intention }
+      });
+      setHasUnsavedChanges(false);
+      setShowSavedBanner(true);
+      setTimeout(() => setShowSavedBanner(false), 3000);
+    } catch (error) {
+      console.error("Error saving check-in:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {

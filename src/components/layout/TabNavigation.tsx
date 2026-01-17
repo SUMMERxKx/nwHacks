@@ -4,8 +4,7 @@ import {
   Home,
   MessageCircle, 
   TrendingUp, 
-  Trophy, 
-  Calendar 
+  Trophy
 } from "lucide-react";
 
 const tabs = [
@@ -13,7 +12,6 @@ const tabs = [
   { path: '/buddy', label: 'Buddy', icon: MessageCircle },
   { path: '/patterns', label: 'Patterns', icon: TrendingUp },
   { path: '/wins', label: 'Wins', icon: Trophy },
-  { path: '/weekly', label: 'Weekly', icon: Calendar },
 ];
 
 export function TabNavigation() {

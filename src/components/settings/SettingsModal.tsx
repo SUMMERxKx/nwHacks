@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Divider } from "@/components/ui/Divider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { LogOut } from "lucide-react";
 
 interface SettingsModalProps {
   open: boolean;
@@ -20,6 +24,17 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const [displayName, setDisplayName] = useState("Alex");
   const [reminderTime, setReminderTime] = useState("20:00");
   const [tone, setTone] = useState("balanced");
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,6 +118,18 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
               These features will be available once you create an account.
             </p>
           </div>
+
+          <Divider />
+
+          {/* Logout */}
+          <Button 
+            onClick={handleLogout}
+            variant="outline" 
+            className="w-full text-destructive hover:text-destructive gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Log Out
+          </Button>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">

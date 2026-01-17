@@ -49,17 +49,6 @@ export interface GrowthNote {
   content: string;
 }
 
-export interface WeeklyReview {
-  id: string;
-  weekStart: string;
-  weekEnd: string;
-  theme: string;
-  wentWell: string[];
-  didntGoWell: string[];
-  nextWeekFocus: string[];
-  riskFlags: string[];
-}
-
 export interface MemorySnapshot {
   commonStressors: string[];
   restoresEnergy: string[];
@@ -224,49 +213,7 @@ export const mockGrowthNotes: GrowthNote[] = [
   }
 ];
 
-// Mock weekly review
-export const mockWeeklyReviews: WeeklyReview[] = [
-  {
-    id: '1',
-    weekStart: getWeekStart(new Date()).toISOString().split('T')[0],
-    weekEnd: getWeekEnd(new Date()).toISOString().split('T')[0],
-    theme: "A week of building momentum through small, consistent wins.",
-    wentWell: [
-      "Maintained a 5-day check-in streak",
-      "Energy levels trended upward",
-      "Delivered key project ahead of schedule",
-      "Protected morning focus time 3 days"
-    ],
-    didntGoWell: [
-      "Meeting overload on Tuesday and Wednesday",
-      "Skipped lunch break twice",
-      "Evening wind-down was inconsistent"
-    ],
-    nextWeekFocus: [
-      "Block 2 hours of deep work each morning",
-      "Take a real lunch break every day",
-      "End work by 6 PM at least 3 days"
-    ],
-    riskFlags: [
-      "Stress trending up mid-week — monitor meeting load",
-      "Sleep quality may be affected by late work sessions"
-    ]
-  }
-];
-
 // Helper functions
-export function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff));
-}
-
-export function getWeekEnd(date: Date): Date {
-  const start = getWeekStart(date);
-  return new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
-}
-
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-US', { 

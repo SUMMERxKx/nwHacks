@@ -10,7 +10,6 @@ import Home from "./pages/Home";
 import Buddy from "./pages/Buddy";
 import Patterns from "./pages/Patterns";
 import Wins from "./pages/Wins";
-import Weekly from "./pages/Weekly";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,14 +54,6 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Wins />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/weekly"
-          element={
-            <ProtectedRoute>
-              <Weekly />
             </ProtectedRoute>
           }
         />

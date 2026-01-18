@@ -3,16 +3,17 @@
  * peakProductivity (from focus/energy), recentWins (proud). No persistence.
  */
 import type { CheckInData, MemorySnapshot } from './types';
+import { promptAnswer } from './types';
 
 export function buildMemorySnapshot(checkIns: CheckInData[]): MemorySnapshot {
   const stressed = checkIns
-    .map((c) => c.prompts?.stressed?.trim())
+    .map((c) => promptAnswer(c.prompts as any, 'stressed').trim())
     .filter((s): s is string => !!s);
   const grateful = checkIns
-    .map((c) => c.prompts?.grateful?.trim())
+    .map((c) => promptAnswer(c.prompts as any, 'grateful').trim())
     .filter((s): s is string => !!s);
   const proud = checkIns
-    .map((c) => c.prompts?.proud?.trim())
+    .map((c) => promptAnswer(c.prompts as any, 'proud').trim())
     .filter((s): s is string => !!s);
 
   const commonStressors = [...new Set(stressed)].slice(0, 5);

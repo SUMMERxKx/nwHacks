@@ -32,8 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  const body = (req.body || {}) as { period?: number };
-  const period = body.period === 7 ? 7 : 30;
+  const body = (req.body || {}) as { period?: number | string };
+  const period = body.period === 7 || body.period === "7" ? 7 : 30;
 
   try {
     const { start, end } = getStartEndForPeriod(period);

@@ -72,7 +72,8 @@ export default function Buddy() {
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, assistantMessage]);
-    } catch {
+    } catch (e) {
+      console.error("Buddy API error:", e);
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

@@ -12,6 +12,11 @@ export async function getCheckInsByDateRange(
 ): Promise<CheckInData[]> {
   const snap = await db.collection('users').doc(userId).collection('checkIns').get();
   return snap.docs
-    .map((d) => d.data() as CheckInData)
-    .filter((c) => c && c.date && c.date >= startDate && c.date <= endDate);
+    .map((d) => {
+      const c = d.data() as CheckInData | undefined;
+      if (!c) return null;
+      const date = c.date || d.id;
+      return { ...c, date } as CheckInData;
+    })
+    .filter((c): c is CheckInData => !!c && c.date >= startDate && c.date <= endDate);
 }

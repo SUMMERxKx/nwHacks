@@ -8,9 +8,9 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: {
-      overlay: false,
-    },
+    hmr: { overlay: false },
+    // Proxy /api to local dev-api (npm run dev:api) on 3000
+    proxy: { "/api": { target: "http://127.0.0.1:3000", changeOrigin: true } },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

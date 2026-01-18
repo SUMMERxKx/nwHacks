@@ -24,7 +24,7 @@ export async function buddyChat(params: { message: string; contextDays: 7 | 30 }
     headers: await getAuthHeaders(),
     body: JSON.stringify({ message: params.message, contextDays: params.contextDays }),
   });
-  if (!res.ok) throw new Error(res.statusText || 'buddy-chat failed');
+  if (!res.ok) throw new Error(`Buddy API ${res.status}: ${res.statusText || "error"}`);
   const data = (await res.json()) as { content?: string };
   return { content: typeof data?.content === 'string' ? data.content : '' };
 }
@@ -35,7 +35,7 @@ export async function generatePatterns(params: { period: 7 | 30 }): Promise<Patt
     headers: await getAuthHeaders(),
     body: JSON.stringify({ period: params.period }),
   });
-  if (!res.ok) throw new Error(res.statusText || 'generate-patterns failed');
+  if (!res.ok) throw new Error(`Patterns API ${res.status}: ${res.statusText || "error"}`);
   const data = (await res.json()) as unknown;
   return Array.isArray(data) ? data : [];
 }

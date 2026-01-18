@@ -27,9 +27,10 @@ export default function Patterns() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const result = await generatePatternsApi({ period });
+      const result = await generatePatternsApi({ period: period === "7" ? 7 : 30 });
       setPatterns(Array.isArray(result) ? result : []);
-    } catch {
+    } catch (e) {
+      console.error("Patterns API error:", e);
       setPatterns([]);
     } finally {
       setIsGenerating(false);

@@ -3,7 +3,7 @@
  * Path: users/{userId}/checkIns; filters by date in memory to avoid composite index.
  */
 import * as admin from 'firebase-admin';
-import { normalizePrompts, type CheckInData } from './types';
+import type { CheckInData } from './types';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -18,9 +18,6 @@ export async function getCheckInsByDateRange(
 ): Promise<CheckInData[]> {
   const snap = await db.collection('users').doc(userId).collection('checkIns').get();
   return snap.docs
-    .map((d) => {
-      const data = d.data() as CheckInData;
-      return { ...data, prompts: normalizePrompts(data.prompts) } as CheckInData;
-    })
+    .map((d) => d.data() as CheckInData)
     .filter((c) => c && c.date && c.date >= startDate && c.date <= endDate);
 }

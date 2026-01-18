@@ -123,53 +123,80 @@ export default function Wins() {
           </div>
 
           {/* Top Wins */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Top Wins</h3>
-            </div>
+          {wins.length > 0 && (
             <div className="space-y-3">
-              {wins.map((win, index) => (
-                <div 
-                  key={win.id}
-                  className="card-elevated p-4 animate-slide-up"
-                  style={{ animationDelay: `${index * 75}ms` }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">{win.emoji ?? "🏆"}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-foreground">{win.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1 italic">"{win.evidence}"</p>
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Top Wins</h3>
+              </div>
+              <div className="space-y-3">
+                {wins.map((win, index) => (
+                  <div 
+                    key={win.id}
+                    className="card-elevated p-4 animate-slide-up"
+                    style={{ animationDelay: `${index * 75}ms` }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg">{win.emoji ?? "🏆"}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground">{win.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1 italic">"{win.evidence}"</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Growth Notes */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Growth Notes</h3>
-            </div>
+          {growthNotes.length > 0 && (
             <div className="space-y-3">
-              {growthNotes.map((note, index) => (
-                <div 
-                  key={note.id}
-                  className="card-soft p-4 animate-slide-up"
-                  style={{ animationDelay: `${(wins.length + index) * 75}ms` }}
-                >
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-foreground">{note.content}</p>
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Growth Notes</h3>
+              </div>
+              <div className="space-y-3">
+                {growthNotes.map((note, index) => (
+                  <div 
+                    key={note.id}
+                    className="card-soft p-4 animate-slide-up"
+                    style={{ animationDelay: `${(wins.length + index) * 75}ms` }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-foreground">{note.content}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Empty state after generation */}
+          {!isGenerating && wins.length === 0 && growthNotes.length === 0 && hasData && (
+            <div className="card-elevated p-8 text-center">
+              <div className="space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto">
+                  <Trophy className="w-8 h-8 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Ready to celebrate your wins?
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Click "Generate" to see your top wins and growth notes.
+                  </p>
+                </div>
+                <Button onClick={handleGenerate} size="lg" className="gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Generate
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -17,7 +17,8 @@ import { createOpenRouterClient, chat } from './lib/openrouter';
 import { getCheckInsByDateRange } from './lib/firestore';
 import { buildMemorySnapshot } from './lib/memory';
 import { getStartEndForContextDays, getStartEndForPeriod } from './lib/dates';
-import type { CheckInData, PatternInsight, Win, GrowthNote } from './lib/types';
+import type { CheckInData, PatternInsight, Win, GrowthNote, PromptId } from './lib/types';
+import { promptAnswer } from './lib/types';
 
 const BUDDY_FALLBACK = "I'm having a moment — try again in a bit. Your check-ins are saved and I'll be here.";
 const PATTERNS_FALLBACK: PatternInsight[] = [];
@@ -26,19 +27,29 @@ const WINS_FALLBACK = { wins: [] as Win[], growthNotes: [] as GrowthNote[] };
 /** Turn check-ins into a readable block for the LLM. */
 function serializeCheckIns(checkIns: CheckInData[]): string {
   if (checkIns.length === 0) return 'No check-ins in this period.';
+  const read = (c: CheckInData, id: PromptId) => promptAnswer(c.prompts as any, id) || '-';
+  const promptLines = (c: CheckInData) => {
+    if (Array.isArray(c.prompts)) {
+      return c.prompts.map((p) => `${p.question}: ${p.answer || '-'}`).join('\n');
+    }
+    const legacy = c.prompts && typeof c.prompts === 'object' ? (c.prompts as Record<string, unknown>) : {};
+    return Object.entries(legacy).map(([k, v]) => `${k}: ${typeof v === 'string' && v ? v : '-'}`).join('\n');
+  };
+
   return checkIns
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((c) => {
       const r = c.ratings || {};
-      const p = c.prompts || {};
       return [
         `[${c.date}]`,
         `ratings: stress=${r.stress} energy=${r.energy} mood=${r.mood} focus=${r.focus}`,
-        `proud: ${p.proud || '-'}`,
-        `stressed: ${p.stressed || '-'}`,
-        `challenge: ${p.challenge || '-'}`,
-        `grateful: ${p.grateful || '-'}`,
-        `intention: ${p.intention || '-'}`,
+        `proud: ${read(c, 'proud')}`,
+        `stressed: ${read(c, 'stressed')}`,
+        `challenge: ${read(c, 'challenge')}`,
+        `grateful: ${read(c, 'grateful')}`,
+        `intention: ${read(c, 'intention')}`,
+        `prompts:`,
+        promptLines(c),
       ].join('\n');
     })
     .join('\n\n---\n\n');

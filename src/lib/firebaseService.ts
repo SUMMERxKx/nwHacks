@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { DEFAULT_PROMPTS, normalizePrompts, type PromptResponse, buildPromptsFromTemplate } from './prompts';
 
 export interface CheckInData {
   id?: string;
@@ -24,15 +25,13 @@ export interface CheckInData {
     mood: number;
     focus: number;
   };
-  prompts: {
-    proud: string;
-    stressed: string;
-    challenge: string;
-    grateful: string;
-    intention: string;
-  };
+  prompts: PromptResponse[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+function sanitizePrompts(input?: unknown): PromptResponse[] {
+  return normalizePrompts(input);
 }
 
 // Save check-in data
@@ -54,6 +53,7 @@ export async function saveCheckIn(checkInData: Omit<CheckInData, 'userId' | 'id'
 
     await setDoc(docRef, {
       ...checkInData,
+      prompts: sanitizePrompts(checkInData.prompts),
       userId,
       createdAt: docSnap.exists() ? docSnap.data().createdAt : now,
       updatedAt: now,
@@ -81,7 +81,12 @@ export async function getCheckInByDate(date: string) {
     );
 
     const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? (docSnap.data() as CheckInData) : null;
+    if (!docSnap.exists()) return null;
+    const data = docSnap.data() as CheckInData;
+    return {
+      ...data,
+      prompts: sanitizePrompts(data.prompts),
+    };
   } catch (error) {
     console.error('Error fetching check-in:', error);
     return null;
@@ -101,7 +106,13 @@ export async function getCheckInsByDateRange(startDate: string, endDate: string)
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data() as CheckInData);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data() as CheckInData;
+      return {
+        ...data,
+        prompts: sanitizePrompts(data.prompts),
+      };
+    });
   } catch (error) {
     console.error('Error fetching check-ins:', error);
     return [];
@@ -116,11 +127,24 @@ export async function getAllCheckIns() {
 
     const q = query(collection(db, 'users', userId, 'checkIns'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data() as CheckInData);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data() as CheckInData;
+      return {
+        ...data,
+        prompts: sanitizePrompts(data.prompts),
+      };
+    });
   } catch (error) {
     console.error('Error fetching all check-ins:', error);
     return [];
   }
+}
+
+export function getDefaultPrompts(template?: PromptResponse[]): PromptResponse[] {
+  if (template && Array.isArray(template) && template.length > 0) {
+    return buildPromptsFromTemplate(template);
+  }
+  return DEFAULT_PROMPTS.map((p) => ({ ...p }));
 }
 
 // Delete check-in

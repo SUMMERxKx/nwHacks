@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { useCheckInData } from "@/hooks/useCheckInData";
-import { getCheckInByDate, saveCheckIn } from "@/lib/firebaseService";
+import { getCheckInByDate, saveCheckIn, getDefaultPrompts } from "@/lib/firebaseService";
+import type { PromptResponse } from "@/lib/prompts";
+import { usePromptTemplates } from "@/hooks/usePromptTemplates";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -21,9 +23,11 @@ import {
   Flame, 
   ClipboardCheck,
   Sparkles,
-  Calendar
+  Calendar,
+  Pencil
 } from "lucide-react";
 import { formatDateFull } from "@/lib/mockData";
+import { Input } from "@/components/ui/input";
 
 export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -32,6 +36,10 @@ export default function Home() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { template, updateQuestion, addQuestion, deleteQuestion, error: templateError } = usePromptTemplates();
+  const [newQuestion, setNewQuestion] = useState("");
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [draftQuestion, setDraftQuestion] = useState("");
   
   // Ratings
   const [stress, setStress] = useState(5);
@@ -39,12 +47,7 @@ export default function Home() {
   const [mood, setMood] = useState(5);
   const [focus, setFocus] = useState(5);
   
-  // Prompts
-  const [proud, setProud] = useState("");
-  const [stressed, setStressed] = useState("");
-  const [challenge, setChallenge] = useState("");
-  const [grateful, setGrateful] = useState("");
-  const [intention, setIntention] = useState("");
+  const [prompts, setPrompts] = useState<PromptResponse[]>(getDefaultPrompts(template));
 
   const { getStreakCount, checkIns } = useCheckInData();
   const streak = getStreakCount();
@@ -63,11 +66,7 @@ export default function Home() {
           setEnergy(firebaseData.ratings.energy);
           setMood(firebaseData.ratings.mood);
           setFocus(firebaseData.ratings.focus);
-          setProud(firebaseData.prompts.proud);
-          setStressed(firebaseData.prompts.stressed);
-          setChallenge(firebaseData.prompts.challenge);
-          setGrateful(firebaseData.prompts.grateful);
-          setIntention(firebaseData.prompts.intention);
+          setPrompts(firebaseData.prompts || getDefaultPrompts(template));
           setShowCheckInSection(true);
         } else {
           // Reset for new day
@@ -75,11 +74,7 @@ export default function Home() {
           setEnergy(5);
           setMood(5);
           setFocus(5);
-          setProud("");
-          setStressed("");
-          setChallenge("");
-          setGrateful("");
-          setIntention("");
+          setPrompts(getDefaultPrompts(template));
           setShowCheckInSection(false);
         }
       } catch (error) {
@@ -91,13 +86,37 @@ export default function Home() {
     };
 
     loadCheckIn();
-  }, [dateKey]);
+  }, [dateKey, template]);
 
   const handleChange = () => {
     setHasUnsavedChanges(true);
   };
 
-  const canSave = proud || stressed || challenge || grateful || intention;
+  const canSave = prompts.some((p) => p.answer.trim());
+
+  const updatePrompt = (id: PromptResponse["id"], patch: Partial<PromptResponse>) => {
+    setPrompts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    if (patch.question !== undefined) {
+      updateQuestion(id, patch.question);
+    }
+    setHasUnsavedChanges(true);
+  };
+
+  const handleAddQuestion = () => {
+    const trimmed = newQuestion.trim();
+    if (!trimmed) return;
+    const id = addQuestion(trimmed);
+    if (!id) return;
+    setPrompts((prev) => [...prev, { id, question: trimmed, answer: "" }]);
+    setNewQuestion("");
+    setHasUnsavedChanges(true);
+  };
+
+  const handleDeleteQuestion = (id: PromptResponse['id']) => {
+    deleteQuestion(id);
+    setPrompts((prev) => prev.filter((p) => p.id !== id));
+    setHasUnsavedChanges(true);
+  };
 
   const handleSave = async () => {
     try {
@@ -105,7 +124,7 @@ export default function Home() {
       await saveCheckIn({
         date: dateKey,
         ratings: { stress, energy, mood, focus },
-        prompts: { proud, stressed, challenge, grateful, intention }
+        prompts,
       });
       setHasUnsavedChanges(false);
       setShowSavedBanner(true);
@@ -130,13 +149,11 @@ export default function Home() {
     setEnergy(5);
     setMood(5);
     setFocus(5);
-    setProud("");
-    setStressed("");
-    setChallenge("");
-    setGrateful("");
-    setIntention("");
+    setPrompts(getDefaultPrompts(template));
     setShowCheckInSection(true);
     setHasUnsavedChanges(false);
+    setEditingQuestionId(null);
+    setDraftQuestion("");
   };
 
   return (
@@ -287,50 +304,75 @@ export default function Home() {
             </Card>
 
             {/* Text Prompts */}
-            <Card className="p-5">
-              <TextAreaWithCounter
-                label="What are you proud of today?"
-                placeholder="Even small wins count..."
-                value={proud}
-                onChange={(v) => { setProud(v); handleChange(); }}
-              />
+            <Card className="p-4 space-y-3 border-dashed border-muted-foreground/40">
+              <div className="text-sm font-medium">Customize questions (future check-ins)</div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a new question"
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                />
+                <Button type="button" onClick={handleAddQuestion} disabled={!newQuestion.trim()}>
+                  Add
+                </Button>
+              </div>
+              {templateError && <p className="text-xs text-destructive">{templateError}</p>}
+              <p className="text-xs text-muted-foreground">Edits here won’t change past check-ins; they become defaults for new ones.</p>
             </Card>
 
-            <Card className="p-5">
-              <TextAreaWithCounter
-                label="Did you feel stressed? Why?"
-                placeholder="What triggered it?"
-                value={stressed}
-                onChange={(v) => { setStressed(v); handleChange(); }}
-              />
-            </Card>
-
-            <Card className="p-5">
-              <TextAreaWithCounter
-                label="What was the biggest challenge?"
-                placeholder="Something you struggled with..."
-                value={challenge}
-                onChange={(v) => { setChallenge(v); handleChange(); }}
-              />
-            </Card>
-
-            <Card className="p-5">
-              <TextAreaWithCounter
-                label="One thing you're grateful for"
-                placeholder="Big or small..."
-                value={grateful}
-                onChange={(v) => { setGrateful(v); handleChange(); }}
-              />
-            </Card>
-
-            <Card className="p-5">
-              <TextAreaWithCounter
-                label="One intention for tomorrow"
-                placeholder="What will you focus on?"
-                value={intention}
-                onChange={(v) => { setIntention(v); handleChange(); }}
-              />
-            </Card>
+            {prompts.map((prompt) => (
+              <Card key={prompt.id} className="p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editingQuestionId === prompt.id ? draftQuestion : prompt.question}
+                    onChange={(e) => {
+                      if (editingQuestionId === prompt.id) setDraftQuestion(e.target.value);
+                    }}
+                    readOnly={editingQuestionId !== prompt.id}
+                    className={`text-sm ${editingQuestionId === prompt.id ? '' : 'cursor-default select-none'}`}
+                  />
+                  {editingQuestionId === prompt.id ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        updatePrompt(prompt.id, { question: draftQuestion.trim() || prompt.question });
+                        setEditingQuestionId(null);
+                        setDraftQuestion("");
+                      }}
+                    >
+                      <Save className="w-4 h-4" />
+                      Save
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        setEditingQuestionId(prompt.id);
+                        setDraftQuestion(prompt.question);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Edit
+                    </Button>
+                  )}
+                  {prompts.length > 1 && (
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteQuestion(prompt.id)}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <TextAreaWithCounter
+                  label="Your answer"
+                  placeholder={prompt.question}
+                  value={prompt.answer}
+                  onChange={(v) => updatePrompt(prompt.id, { answer: v })}
+                />
+              </Card>
+            ))}
 
             {/* Save Button */}
             <Button

@@ -12,6 +12,7 @@ import { ChatMessage } from "@/lib/mockData";
 import { buddyChat } from "@/lib/aiApi";
 import { getAllCheckIns } from "@/lib/firebaseService";
 import type { CheckInData } from "@/lib/firebaseService";
+import { getPromptAnswer } from "@/lib/prompts";
 import { 
   Send, 
   ChevronDown, 
@@ -49,11 +50,11 @@ function generateMemorySnapshot(data: CheckInData[]) {
 
   // Parse stressors and energy boosters from prompts
   const allStressed = data
-    .flatMap(d => d.prompts.stressed?.split(/[,;]/).map(s => s.trim()).filter(Boolean) || [])
+    .flatMap(d => getPromptAnswer(d.prompts, 'stressed').split(/[,;]/).map(s => s.trim()).filter(Boolean))
     .filter(Boolean);
   
   const allProud = data
-    .flatMap(d => d.prompts.proud?.split(/[,;]/).map(s => s.trim()).filter(Boolean) || [])
+    .flatMap(d => getPromptAnswer(d.prompts, 'proud').split(/[,;]/).map(s => s.trim()).filter(Boolean))
     .filter(Boolean);
 
   // Count frequencies
@@ -90,12 +91,16 @@ function generateMemorySnapshot(data: CheckInData[]) {
   
   const peakDay = highProductivityDays.length > 0 
     ? highProductivityDays[0]
-    : "Varies - keep tracking!";
+    : "Varies - keep tracking";
+
+  const peakLine = highProductivityDays.length > 0
+    ? `Best focus on ${peakDay}s (Avg: ${avgEnergy}/10 energy)`
+    : `Best focus varies - keep tracking (Avg: ${avgEnergy}/10 energy)`;
 
   return {
     commonStressors: topStressors.length > 0 ? topStressors : ["Track more to see patterns"],
     restoresEnergy: topEnergy.length > 0 ? topEnergy : ["Track more to see patterns"],
-    peakProductivity: `Best focus on ${peakDay}s (Avg: ${avgEnergy}/10 energy)`,
+    peakProductivity: peakLine,
     avgMood,
     avgStress,
     avgEnergy

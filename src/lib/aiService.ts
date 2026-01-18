@@ -11,6 +11,8 @@ interface Message {
   content: string;
 }
 
+import type { PromptResponse, PromptId } from './prompts';
+
 interface CheckInData {
   date: string;
   ratings: {
@@ -19,11 +21,32 @@ interface CheckInData {
     energy: number;
     focus: number;
   };
-  prompts: {
-    proud: string;
-    stressed: string;
-    challenge: string;
-  };
+  prompts: PromptResponse[] | Record<string, unknown>;
+}
+
+function promptAnswer(prompts: CheckInData['prompts'], id: PromptId) {
+  if (Array.isArray(prompts)) {
+    const found = prompts.find((p) => p.id === id);
+    if (found && typeof found.answer === 'string') return found.answer;
+  } else if (prompts && typeof prompts === 'object') {
+    const val = (prompts as Record<string, unknown>)[id];
+    if (typeof val === 'string') return val;
+  }
+  return '';
+}
+
+function promptLines(prompts: CheckInData['prompts']): string {
+  if (Array.isArray(prompts)) {
+    return prompts
+      .map((p) => `${p.question}: ${typeof p.answer === 'string' && p.answer.trim() ? p.answer : '-'}`)
+      .join('\n  ');
+  }
+  if (prompts && typeof prompts === 'object') {
+    return Object.entries(prompts)
+      .map(([k, v]) => `${k}: ${typeof v === 'string' && v.trim() ? v : '-'}`)
+      .join('\n  ');
+  }
+  return '';
 }
 
 async function callOpenAI(messages: Message[], model = 'gpt-3.5-turbo') {
@@ -61,7 +84,7 @@ Be warm, supportive, and insightful. Keep responses concise (2-3 sentences).`;
 
   if (checkInData && checkInData.length > 0) {
     const recentCheckIns = checkInData.slice(-7).map(c => 
-      `${c.date}: Mood ${c.ratings.mood}/10, Stress ${c.ratings.stress}/10, Energy ${c.ratings.energy}/10, Focus ${c.ratings.focus}/10. Proud: ${c.prompts.proud}`
+      `${c.date}: Mood ${c.ratings.mood}/10, Stress ${c.ratings.stress}/10, Energy ${c.ratings.energy}/10, Focus ${c.ratings.focus}/10. Prompts -> ${promptLines(c.prompts)}`
     ).join('\n');
     
     systemContent += `\n\nUser's recent check-ins for context:\n${recentCheckIns}`;
@@ -84,7 +107,7 @@ Be warm, supportive, and insightful. Keep responses concise (2-3 sentences).`;
 // Generate Patterns
 export async function generatePatterns(checkInData: CheckInData[], period: '7' | '30' = '30') {
   const dataStr = checkInData.map(c => 
-    `Date: ${c.date}\n  Mood: ${c.ratings.mood}/10\n  Stress: ${c.ratings.stress}/10\n  Energy: ${c.ratings.energy}/10\n  Focus: ${c.ratings.focus}/10\n  Proud of: ${c.prompts.proud}\n  Stressed by: ${c.prompts.stressed}\n  Challenge: ${c.prompts.challenge}`
+    `Date: ${c.date}\n  Mood: ${c.ratings.mood}/10\n  Stress: ${c.ratings.stress}/10\n  Energy: ${c.ratings.energy}/10\n  Focus: ${c.ratings.focus}/10\n  Prompts:\n  ${promptLines(c.prompts)}`
   ).join('\n\n');
 
   const systemPrompt = {
@@ -140,7 +163,7 @@ Remember: Only patterns clearly supported by the data. Generate exactly 3. Retur
 // Generate Wins
 export async function generateWins(checkInData: CheckInData[], period: 'week' | '30' = '30') {
   const dataStr = checkInData.map(c => 
-    `${c.date}: Proud of - ${c.prompts.proud}`
+    `${c.date}: Proud of - ${promptAnswer(c.prompts, 'proud')}`
   ).join('\n');
 
   const systemPrompt = {
@@ -206,8 +229,7 @@ Remember: Only real wins from their words. No interpretation.`;
 // Generate Blind Spots
 export async function generateBlindSpots(checkInData: CheckInData[], period: 'week' | '30' = '30') {
   const dataStr = checkInData.map(c => {
-    const prompts = c.prompts as any; // Access all prompt fields (proud, stressed, challenge, grateful, intention)
-    return `Date: ${c.date}\n  Mood: ${c.ratings.mood}/10\n  Stress: ${c.ratings.stress}/10\n  Energy: ${c.ratings.energy}/10\n  Focus: ${c.ratings.focus}/10\n  Proud of: ${prompts.proud || '-'}\n  Stressed by: ${prompts.stressed || '-'}\n  Challenge: ${prompts.challenge || '-'}\n  Grateful: ${prompts.grateful || '-'}\n  Intention: ${prompts.intention || '-'}`;
+    return `Date: ${c.date}\n  Mood: ${c.ratings.mood}/10\n  Stress: ${c.ratings.stress}/10\n  Energy: ${c.ratings.energy}/10\n  Focus: ${c.ratings.focus}/10\n  Prompts:\n  ${promptLines(c.prompts)}`;
   }).join('\n\n');
 
   const systemPrompt = {

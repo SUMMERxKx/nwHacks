@@ -15,7 +15,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Buddy from "./pages/Buddy";
-import Patterns from "./pages/Patterns";
+// import Patterns from "./pages/Patterns"; // Commented out for now
 import Wins from "./pages/Wins";
 import NotFound from "./pages/NotFound";
 
@@ -48,14 +48,15 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* Patterns route commented out for now */}
+        {/* <Route
           path="/patterns"
           element={
             <ProtectedRoute>
               <Patterns />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/wins"
           element={

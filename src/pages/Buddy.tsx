@@ -196,7 +196,7 @@ export default function Buddy() {
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader>
-                <SheetTitle className="font-serif">Context Window</SheetTitle>
+                <SheetTitle>Context Window</SheetTitle>
               </SheetHeader>
               <div className="py-6 space-y-3">
                 <p className="text-sm text-muted-foreground">
@@ -222,7 +222,6 @@ export default function Buddy() {
             </SheetContent>
           </Sheet>
         }
-        onSettingsClick={() => setSettingsOpen(true)}
       />
 
       <div className="flex flex-col h-[calc(100vh-180px)]">
@@ -277,8 +276,11 @@ export default function Buddy() {
                 <Sparkles className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Hey there!</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">
+                I'm your memory buddy. I help you reflect on your mood, plan ahead, and notice positive patterns.
+              </p>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                I'm your Buddy. I'll learn from your check-ins to give you personalized insights.
+                Always here to support you with a positive perspective! 💚
               </p>
             </div>
           ) : (

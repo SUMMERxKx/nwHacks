@@ -56,15 +56,20 @@ async function callOpenAI(messages: Message[], model = 'gpt-3.5-turbo') {
 
 // Buddy Chat
 export async function buddyChat(userMessage: string, conversationHistory: Message[], checkInData?: CheckInData[]) {
-  let systemContent = `You are a thoughtful reflection buddy. You help users reflect on their day, understand patterns, and grow. 
-Be warm, supportive, and insightful. Keep responses concise (2-3 sentences).`;
+  let systemContent = `You are a positive, supportive memory buddy. You help users reflect on their mood, plan ahead, and notice patterns in a warm and encouraging way. Always be positive and uplifting. Focus on:
+- Reflecting on their current mood and feelings
+- Helping them plan and set intentions
+- Noticing positive patterns in their check-ins
+- Being encouraging and supportive
+
+Keep responses concise (2-3 sentences) and always end on a positive note.`;
 
   if (checkInData && checkInData.length > 0) {
     const recentCheckIns = checkInData.slice(-7).map(c => 
-      `${c.date}: Mood ${c.ratings.mood}/10, Stress ${c.ratings.stress}/10, Energy ${c.ratings.energy}/10, Focus ${c.ratings.focus}/10. Proud: ${c.prompts.proud}`
+      `${c.date}: Mood ${c.ratings.mood}/10, Stress ${c.ratings.stress}/10, Energy ${c.ratings.energy}/10, Focus ${c.ratings.focus}/10. Proud: ${c.prompts.proud}, Grateful: ${c.prompts.grateful}, Intention: ${c.prompts.intention}`
     ).join('\n');
     
-    systemContent += `\n\nUser's recent check-ins for context:\n${recentCheckIns}`;
+    systemContent += `\n\nUser's recent check-ins for context (focus on positive aspects):\n${recentCheckIns}`;
   }
 
   const systemPrompt = {
@@ -145,28 +150,29 @@ export async function generateWins(checkInData: CheckInData[], period: 'week' | 
 
   const systemPrompt = {
     role: 'system' as const,
-    content: `You are a personal achievement analyst. Your task is to extract and celebrate real wins from reflection data.
+    content: `You are a positive achievement analyst focused ONLY on finding and celebrating good things. Your task is to extract positive wins and encouraging messages from reflection data.
 
 CRITICAL RULES:
 1. ONLY extract wins that are explicitly mentioned in the check-ins
-2. Generate exactly 3 wins (no more, no less)
-3. Each win must have direct evidence from the "proud of" reflections
-4. No embellishment or interpretation - use their exact words
-5. Generate 2-3 growth notes that are encouraging but grounded
-6. Format as JSON only, no other text
+2. Generate exactly 3 wins (no more, no less) - focus on positive achievements
+3. Each win must have direct evidence from the "proud of" or "grateful" reflections
+4. Use their words but frame everything positively
+5. Generate 2-3 growth notes that are ENCOURAGING and POSITIVE (always uplifting)
+6. Never focus on negatives - only highlight what they did well
+7. Format as JSON only, no other text
 
 For wins array, provide:
-- title: The achievement (extract from their words, 4-8 words)
-- evidence: Exact quote from their reflection
+- title: The positive achievement (extract from their words, make it sound great, 4-8 words)
+- evidence: Quote from their reflection that shows the win
 - category: Type of win (personal, professional, health, relationship, learning)
 
 For growth notes array, provide:
-- content: Encouraging observation based on their data (8-15 words)
+- content: ENCOURAGING, positive observation (8-15 words) like "You're showing amazing consistency!" or "Your reflections show real growth!"
 
-Return ONLY valid JSON, no markdown code blocks or explanation.`
+Return ONLY valid JSON, no markdown code blocks or explanation. Always focus on the positive.`
   };
 
-  const userPrompt = `Extract 3 real wins from these reflections from the last ${period === 'week' ? '7 days' : '30 days'}. Use their exact words. Also generate 2-3 encouraging growth observations:
+  const userPrompt = `Extract 3 positive wins from these reflections from the last ${period === 'week' ? '7 days' : '30 days'}. Focus on the good things they mentioned. Also generate 2-3 ENCOURAGING, POSITIVE growth observations:
 
 ${dataStr}
 
@@ -176,7 +182,7 @@ Return JSON with this structure:
   "growthNotes": [{"content": "..."}]
 }
 
-Remember: Only real wins from their words. No interpretation.`;
+Remember: Only positive wins. Always frame things positively. Growth notes should be uplifting and encouraging.`;
 
   const response = await callOpenAI([
     systemPrompt,

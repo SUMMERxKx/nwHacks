@@ -1,6 +1,7 @@
 /**
- * Firebase app, Auth, Firestore, Analytics. Uses VITE_FIREBASE_* from env.
- * AI runs via /api/* (Vercel), not Cloud Functions — for Spark plan.
+ * Firebase app, Auth, Firestore, Analytics.
+ * Uses VITE_FIREBASE_* from .env.local
+ * AI API calls go through aiService.ts (local OpenAI integration)
  */
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';

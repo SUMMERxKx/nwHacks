@@ -68,11 +68,12 @@ export default function Buddy() {
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: reply || "I'm having a moment — try again in a bit.",
+        content: reply,
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, assistantMessage]);
-    } catch {
+    } catch (error) {
+      console.error('Chat error:', error);
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

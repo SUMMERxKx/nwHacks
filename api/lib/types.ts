@@ -38,3 +38,16 @@ export interface GrowthNote {
   id: string;
   content: string;
 }
+
+export interface BlindSpot {
+  id: string;
+  title: string;
+  observation: string;
+  suggestion: string;
+  date: string;
+}
+
+export interface AwarenessNote {
+  id: string;
+  content: string;
+}

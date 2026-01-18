@@ -3,8 +3,8 @@
  * AI API wrapper - calls local aiService.ts which uses OpenAI API directly
  * For development with Spark plan (no Cloud Functions)
  */
-import { buddyChat as buddyChatAI, generatePatterns as generatePatternsAI, generateWins as generateWinsAI } from './aiService';
-import type { PatternInsight, Win, GrowthNote } from './mockData';
+import { buddyChat as buddyChatAI, generatePatterns as generatePatternsAI, generateWins as generateWinsAI, generateBlindSpots as generateBlindSpotsAI } from './aiService';
+import type { PatternInsight, Win, GrowthNote, BlindSpot, AwarenessNote } from './mockData';
 import type { CheckInData } from './firebaseService';
 
 export async function buddyChat(params: { message: string; contextDays: 7 | 30; history?: { role: string; content: string }[]; checkInData?: CheckInData[] }): Promise<{ content: string }> {
@@ -72,5 +72,32 @@ export async function generateWins(params: { checkInData?: CheckInData[]; period
   } catch (error) {
     console.error('Generate wins error:', error);
     return { wins: [], growthNotes: [] };
+  }
+}
+
+/**
+ * Generate Blind Spots - uses local aiService for development
+ * For production, this can be updated to use fetch to /api/generate-blind-spots
+ */
+export async function generateBlindSpots(params: { checkInData?: CheckInData[]; period: 'week' | '30' }): Promise<{ blindSpots: BlindSpot[]; awarenessNotes: AwarenessNote[] }> {
+  try {
+    const result = await generateBlindSpotsAI(params.checkInData || [], params.period);
+    
+    return {
+      blindSpots: (result.blindSpots || []).map((b: any) => ({
+        id: String(b.id || Math.random().toString()),
+        title: b.title || 'Awareness opportunity',
+        observation: b.observation || '',
+        suggestion: b.suggestion || '',
+        date: b.date || new Date().toISOString().split('T')[0],
+      })),
+      awarenessNotes: (result.awarenessNotes || []).map((a: any) => ({
+        id: String(a.id || Math.random().toString()),
+        content: a.content || '',
+      })),
+    };
+  } catch (error) {
+    console.error('Generate blind spots error:', error);
+    return { blindSpots: [], awarenessNotes: [] };
   }
 }

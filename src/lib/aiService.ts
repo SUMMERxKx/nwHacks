@@ -208,3 +208,87 @@ Remember: Only positive wins. Always frame things positively. Growth notes shoul
     return { wins: [], growthNotes: [] };
   }
 }
+
+// Generate Blind Spots
+export async function generateBlindSpots(checkInData: CheckInData[], period: 'week' | '30' = '30') {
+  const dataStr = checkInData.map(c => {
+    const prompts = c.prompts as any; // Access all prompt fields
+    return `Date: ${c.date}\n  Mood: ${c.ratings.mood}/10\n  Stress: ${c.ratings.stress}/10\n  Energy: ${c.ratings.energy}/10\n  Focus: ${c.ratings.focus}/10\n  Proud of: ${prompts.proud || '-'}\n  Stressed by: ${prompts.stressed || '-'}\n  Challenge: ${prompts.challenge || '-'}\n  Grateful: ${prompts.grateful || '-'}\n  Intention: ${prompts.intention || '-'}`;
+  }).join('\n\n');
+
+  const systemPrompt = {
+    role: 'system' as const,
+    content: `You are a thoughtful reflection analyst helping users build self-awareness. You identify potential blind spots—patterns, habits, or perspectives they might not notice themselves—that could be limiting their progress or causing unintended friction.
+
+CRITICAL SAFETY RULES:
+1. Use CONSTRUCTIVE, NEUTRAL, and SUPPORTIVE language only
+2. NEVER include language about suicide, self-harm, hopelessness, or despair
+3. NEVER use harsh judgments, blame, or negative character statements
+4. Frame insights as OBSERVATIONS and POSSIBILITIES, not diagnoses or conclusions
+5. Focus on ACTIONABLE, GROWTH-ORIENTED suggestions rather than problems
+6. Help build awareness and self-understanding without causing distress
+7. Always maintain a tone of curiosity and possibility, never judgment
+8. If no clear blind spots emerge, return empty arrays rather than forcing observations
+
+Your goal is gentle awareness-building that empowers growth.
+
+CRITICAL RULES:
+1. Generate 1 to 4 blind spots (no more, no less)
+2. Each blind spot must be evidence-based from the check-ins
+3. Be gentle, constructive, and supportive
+4. Format as JSON only, no other text
+
+For blindSpots array, provide:
+- id: "1", "2", etc.
+- title: Brief title (4-8 words)
+- observation: What pattern or habit you notice (1-2 sentences)
+- suggestion: Actionable, growth-oriented suggestion (1 sentence)
+- date: Date from check-ins (YYYY-MM-DD)
+
+For awarenessNotes array, provide:
+- id: "1", "2", etc.
+- content: Supportive awareness note (1-2 sentences)
+
+Return ONLY valid JSON, no markdown code blocks or explanation.`
+  };
+
+  const userPrompt = `Analyze these check-ins from the last ${period === 'week' ? '7 days' : '30 days'} for potential blind spots or overlooked patterns that may be limiting progress. Look for:
+- Patterns in stress responses that might benefit from awareness
+- Energy drains that could be addressed with small adjustments
+- Opportunities for perspective shifts that could reduce friction
+- Habits or routines that might be creating unintended obstacles
+
+${dataStr}
+
+Return JSON with this structure:
+{
+  "blindSpots": [{"id":"1","title":"...","observation":"...","suggestion":"...","date":"YYYY-MM-DD"}],
+  "awarenessNotes": [{"id":"1","content":"..."}]
+}
+
+Be gentle, constructive, and supportive. No other text.`;
+
+  const response = await callOpenAI([
+    systemPrompt,
+    { role: 'user' as const, content: userPrompt }
+  ]);
+
+  try {
+    // Handle both direct JSON and markdown-wrapped JSON
+    const jsonStr = response.includes('```json') 
+      ? response.split('```json')[1].split('```')[0].trim()
+      : response.includes('```')
+      ? response.split('```')[1].trim()
+      : response.trim();
+    
+    const result = JSON.parse(jsonStr);
+    
+    return {
+      blindSpots: Array.isArray(result.blindSpots) ? result.blindSpots.slice(0, 4) : [],
+      awarenessNotes: Array.isArray(result.awarenessNotes) ? result.awarenessNotes.slice(0, 3) : []
+    };
+  } catch (error) {
+    console.error('Blind spots parsing error:', error);
+    return { blindSpots: [], awarenessNotes: [] };
+  }
+}

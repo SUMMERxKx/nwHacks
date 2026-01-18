@@ -2,7 +2,7 @@
  * App.tsx — Root component: providers and routing.
  *
  * - /login: Login (no layout, no ProtectedRoute).
- * - /, /buddy, /patterns, /wins: AppLayout + TabNavigation; ProtectedRoute (redirect to /login if not signed in).
+ * - /, /buddy, /patterns, /wins, /blind-spots: AppLayout + TabNavigation; ProtectedRoute (redirect to /login if not signed in).
  * - *: NotFound.
  */
 import { Toaster } from "@/components/ui/toaster";
@@ -17,6 +17,7 @@ import Home from "./pages/Home";
 import Buddy from "./pages/Buddy";
 // import Patterns from "./pages/Patterns"; // Commented out for now
 import Wins from "./pages/Wins";
+import BlindSpots from "./pages/BlindSpots";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Wins />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/blind-spots"
+          element={
+            <ProtectedRoute>
+              <BlindSpots />
             </ProtectedRoute>
           }
         />

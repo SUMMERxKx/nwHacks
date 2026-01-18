@@ -1,6 +1,6 @@
 /**
- * Wins: hasData = checkIns.length > 0. Consistency from getCheckInsByDateRange(weekStart, weekEnd).
- * Generate calls generateWins callable → wins + growthNotes. Period 'week'|'30'.
+ * BlindSpots: Dedicated page for blind spot analysis.
+ * Generate calls generateBlindSpots API → blindSpots + awarenessNotes. Period 'week'|'30'.
  */
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -10,23 +10,18 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonCard } from "@/components/ui/SkeletonLoader";
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { useCheckInData } from "@/hooks/useCheckInData";
-import { generateWins as generateWinsApi, generateBlindSpots as generateBlindSpotsApi } from "@/lib/aiApi";
+import { generateBlindSpots as generateBlindSpotsApi } from "@/lib/aiApi";
 import { toYYYYMMDD, getWeekStart, getWeekEnd } from "@/lib/utils";
-import { Win, GrowthNote, BlindSpot, AwarenessNote } from "@/lib/mockData";
-import { Trophy, Sparkles, RefreshCw, CheckCircle, TrendingUp, Heart, Eye } from "lucide-react";
+import { BlindSpot, AwarenessNote } from "@/lib/mockData";
+import { Eye, RefreshCw, TrendingUp, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-type DisplayWin = Win & { emoji?: string };
-
-export default function Wins() {
+export default function BlindSpots() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [period, setPeriod] = useState<'week' | '30'>('week');
-  const [wins, setWins] = useState<DisplayWin[]>([]);
-  const [growthNotes, setGrowthNotes] = useState<GrowthNote[]>([]);
   const [blindSpots, setBlindSpots] = useState<BlindSpot[]>([]);
   const [awarenessNotes, setAwarenessNotes] = useState<AwarenessNote[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isGeneratingBlindSpots, setIsGeneratingBlindSpots] = useState(false);
 
   const { checkIns, getCheckInsByDateRange } = useCheckInData();
   const hasData = checkIns.length > 0;
@@ -43,24 +38,6 @@ export default function Wins() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const { wins: w, growthNotes: g } = await generateWinsApi({ checkInData: checkIns, period });
-      const normalizedWins: DisplayWin[] = Array.isArray(w)
-        ? w.map((win) => ({ ...win, emoji: (win as DisplayWin).emoji ?? "🏆" }))
-        : [];
-      setWins(normalizedWins);
-      setGrowthNotes(Array.isArray(g) ? g : []);
-    } catch (error) {
-      console.error('Error generating wins:', error);
-      setWins([]);
-      setGrowthNotes([]);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleGenerateBlindSpots = async () => {
-    setIsGeneratingBlindSpots(true);
-    try {
       const { blindSpots: bs, awarenessNotes: an } = await generateBlindSpotsApi({ checkInData: checkIns, period });
       setBlindSpots(Array.isArray(bs) ? bs : []);
       setAwarenessNotes(Array.isArray(an) ? an : []);
@@ -69,14 +46,14 @@ export default function Wins() {
       setBlindSpots([]);
       setAwarenessNotes([]);
     } finally {
-      setIsGeneratingBlindSpots(false);
+      setIsGenerating(false);
     }
   };
 
   return (
     <>
       <PageHeader
-        title="Wins"
+        title="Blind Spots"
         subtitle={
           <div className="flex items-center gap-2">
             <Chip
@@ -97,26 +74,15 @@ export default function Wins() {
         }
         action={
           hasData && (
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={handleGenerate} 
-                disabled={isGenerating || isGeneratingBlindSpots}
-                variant="outline"
-                className="gap-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-                Generate
-              </Button>
-              <Button 
-                onClick={handleGenerateBlindSpots} 
-                disabled={isGenerating || isGeneratingBlindSpots}
-                variant="outline"
-                className="gap-2"
-              >
-                <Eye className={`w-4 h-4 ${isGeneratingBlindSpots ? 'animate-spin' : ''}`} />
-                Blind Spot
-              </Button>
-            </div>
+            <Button 
+              onClick={handleGenerate} 
+              disabled={isGenerating}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+              Generate
+            </Button>
           )
         }
         onSettingsClick={() => setSettingsOpen(true)}
@@ -124,11 +90,11 @@ export default function Wins() {
 
       {!hasData ? (
         <EmptyState
-          icon={Trophy}
-          title="Your wins will appear here"
-          description="Complete check-ins to start tracking your progress and celebrating achievements."
+          icon={Eye}
+          title="Your blind spots will appear here"
+          description="Complete check-ins to discover potential blind spots and build greater self-awareness."
         />
-      ) : (isGenerating || isGeneratingBlindSpots) ? (
+      ) : isGenerating ? (
         <div className="space-y-4">
           <SkeletonCard />
           <SkeletonCard />
@@ -151,57 +117,6 @@ export default function Wins() {
             </div>
           </div>
 
-          {/* Top Wins */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Top Wins</h3>
-            </div>
-            <div className="space-y-3">
-              {wins.map((win, index) => (
-                <div 
-                  key={win.id}
-                  className="card-elevated p-4 animate-slide-up"
-                  style={{ animationDelay: `${index * 75}ms` }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">{win.emoji ?? "🏆"}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-foreground">{win.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1 italic">"{win.evidence}"</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Growth Notes */}
-          {growthNotes.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-primary" />
-                <h3 className="font-semibold">Growth Notes</h3>
-              </div>
-              <div className="space-y-3">
-                {growthNotes.map((note, index) => (
-                  <div 
-                    key={note.id}
-                    className="card-soft p-4 animate-slide-up"
-                    style={{ animationDelay: `${(wins.length + index) * 75}ms` }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-foreground">{note.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Blind Spots */}
           {blindSpots.length > 0 && (
             <div className="space-y-3">
@@ -214,7 +129,7 @@ export default function Wins() {
                   <div 
                     key={spot.id}
                     className="card-elevated p-4 animate-slide-up border-amber-200/30"
-                    style={{ animationDelay: `${(wins.length + growthNotes.length + index) * 75}ms` }}
+                    style={{ animationDelay: `${index * 75}ms` }}
                   >
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center flex-shrink-0">
@@ -247,7 +162,7 @@ export default function Wins() {
                   <div 
                     key={note.id}
                     className="card-soft p-4 animate-slide-up border-amber-100"
-                    style={{ animationDelay: `${(wins.length + growthNotes.length + blindSpots.length + index) * 75}ms` }}
+                    style={{ animationDelay: `${(blindSpots.length + index) * 75}ms` }}
                   >
                     <div className="flex items-start gap-3">
                       <Eye className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -255,6 +170,29 @@ export default function Wins() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state after generation */}
+          {!isGenerating && blindSpots.length === 0 && awarenessNotes.length === 0 && hasData && (
+            <div className="card-elevated p-8 text-center">
+              <div className="space-y-4">
+                <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center mx-auto">
+                  <Eye className="w-8 h-8 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Ready to discover your blind spots?
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Click "Generate" to find potential blind spots and build greater self-awareness
+                  </p>
+                </div>
+                <Button onClick={handleGenerate} size="lg" className="gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Generate
+                </Button>
               </div>
             </div>
           )}

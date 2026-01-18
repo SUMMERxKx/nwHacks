@@ -7,6 +7,7 @@ Replaces Firebase Cloud Functions so the project can stay on the **Spark** plan.
 - **POST /api/buddy-chat** — Body: `{ message, contextDays: 7|30 }`, Header: `Authorization: Bearer <idToken>`. Returns `{ content }`.
 - **POST /api/generate-patterns** — Body: `{ period: 7|30 }`, Header: `Authorization: Bearer <idToken>`. Returns `PatternInsight[]`.
 - **POST /api/generate-wins** — Body: `{ period: 'week'|'30' }`, Header: `Authorization: Bearer <idToken>`. Returns `{ wins, growthNotes }`.
+- **POST /api/generate-blind-spots** — Body: `{ period: 'week'|'30' }`, Header: `Authorization: Bearer <idToken>`. Returns `{ blindSpots, awarenessNotes }`. Gently surfaces potential blind spots or overlooked patterns with constructive, supportive language.
 
 ## Env (Vercel project)
 

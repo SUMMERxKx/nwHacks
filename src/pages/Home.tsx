@@ -320,7 +320,6 @@ export default function Home() {
             </Card>
 
             {/* Text Prompts */}
-<<<<<<< HEAD
             <Card className="p-4 space-y-3 border-dashed border-muted-foreground/40">
               <div className="text-sm font-medium">Customize questions (future check-ins)</div>
               <div className="flex gap-2">

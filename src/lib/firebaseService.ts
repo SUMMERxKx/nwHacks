@@ -13,6 +13,10 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { DEFAULT_PROMPTS, type PromptResponse, normalizePrompts } from './prompts';
+
+// Support both old format (Record<string, string>) and new format (PromptResponse[])
+export type CheckInPrompts = PromptResponse[] | Record<string, string>;
 
 export interface CheckInData {
   id?: string;
@@ -24,17 +28,15 @@ export interface CheckInData {
     mood: number;
     focus: number;
   };
-  prompts: {
-    proud: string;
-    stressed: string;
-    challenge: string;
-    grateful: string;
-    intention: string;
-  };
+  prompts: CheckInPrompts;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
+// Helper to get default prompts from template
+export function getDefaultPrompts(template: PromptResponse[]): PromptResponse[] {
+  return template.map((p) => ({ ...p, answer: '' }));
+}
 // Save check-in data
 export async function saveCheckIn(checkInData: Omit<CheckInData, 'userId' | 'id' | 'createdAt' | 'updatedAt'>) {
   try {

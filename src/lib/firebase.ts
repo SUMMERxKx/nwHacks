@@ -6,7 +6,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,4 +21,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const analytics = getAnalytics(app);
+let analyticsInstance: ReturnType<typeof getAnalytics> | null = null;
+// Avoid analytics init in unsupported environments (e.g., localhost without config or SSR).
+isSupported()
+  .then((supported) => {
+    if (supported) analyticsInstance = getAnalytics(app);
+  })
+  .catch(() => {
+    analyticsInstance = null;
+  });
+
+export const analytics = analyticsInstance;

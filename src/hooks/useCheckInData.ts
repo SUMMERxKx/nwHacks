@@ -2,31 +2,40 @@
  * Loads all check-ins from Firestore (getAllCheckIns) and exposes:
  * checkIns, isLoading, error, getLastNCheckIns, getAverageRating, getCheckInsByDateRange, getStreakCount.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { getAllCheckIns, CheckInData } from '@/lib/firebaseService';
+import { auth } from '@/lib/firebase';
 
 export function useCheckInData() {
   const [checkIns, setCheckIns] = useState<CheckInData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadCheckIns = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAllCheckIns();
-        setCheckIns(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error loading check-ins:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load check-ins');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCheckIns();
+  const loadCheckIns = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAllCheckIns();
+      setCheckIns(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading check-ins:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load check-ins');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // Initial load + refresh when auth changes to avoid cross-account data.
+    const unsub = onAuthStateChanged(auth, () => {
+      setCheckIns([]);
+      loadCheckIns();
+    });
+    // Kick off initial fetch immediately.
+    loadCheckIns();
+    return () => unsub();
+  }, [loadCheckIns]);
 
   // Helper functions to analyze the data
   const getLastNCheckIns = (n: number) => {
@@ -72,5 +81,6 @@ export function useCheckInData() {
     getAverageRating,
     getCheckInsByDateRange,
     getStreakCount,
+    reloadCheckIns: loadCheckIns,
   };
 }

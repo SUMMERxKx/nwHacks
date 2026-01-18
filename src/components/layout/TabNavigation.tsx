@@ -1,5 +1,5 @@
 /**
- * Bottom tab bar: Home, Buddy, Patterns, Wins. Uses NavLink; active state by pathname.
+ * Bottom tab bar: Home, Buddy, Patterns, Wins, Blind Spots. Uses NavLink; active state by pathname.
  */
 import { cn } from "@/lib/utils";
 import { NavLink, useLocation } from "react-router-dom";
@@ -7,7 +7,8 @@ import {
   Home,
   MessageCircle, 
   TrendingUp, 
-  Trophy
+  Trophy,
+  Eye
 } from "lucide-react";
 
 const tabs = [
@@ -15,6 +16,7 @@ const tabs = [
   { path: '/buddy', label: 'Buddy', icon: MessageCircle },
   { path: '/patterns', label: 'Patterns', icon: TrendingUp },
   { path: '/wins', label: 'Wins', icon: Trophy },
+  { path: '/blind-spots', label: 'Blind Spots', icon: Eye },
 ];
 
 export function TabNavigation() {

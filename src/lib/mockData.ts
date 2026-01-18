@@ -51,6 +51,19 @@ export interface GrowthNote {
   content: string;
 }
 
+export interface BlindSpot {
+  id: string;
+  title: string;
+  observation: string;
+  suggestion: string;
+  date: string;
+}
+
+export interface AwarenessNote {
+  id: string;
+  content: string;
+}
+
 export interface MemorySnapshot {
   commonStressors: string[];
   restoresEnergy: string[];

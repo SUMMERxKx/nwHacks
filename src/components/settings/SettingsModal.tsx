@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Divider } from "@/components/ui/Divider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { LogOut } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/hooks/use-toast";
 
 interface SettingsModalProps {
   open: boolean;
@@ -21,10 +23,20 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
-  const [displayName, setDisplayName] = useState("Alex");
-  const [reminderTime, setReminderTime] = useState("20:00");
-  const [tone, setTone] = useState("balanced");
+  const { settings, updateSettings } = useSettings();
+  const [displayName, setDisplayName] = useState(settings.displayName);
+  const [reminderTime, setReminderTime] = useState(settings.reminderTime);
+  const [tone, setTone] = useState(settings.tone);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (open) {
+      setDisplayName(settings.displayName);
+      setReminderTime(settings.reminderTime);
+      setTone(settings.tone);
+    }
+  }, [open, settings]);
 
   const handleLogout = async () => {
     try {
@@ -34,6 +46,15 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
     } catch (error) {
       console.error("Error logging out:", error);
     }
+  };
+
+  const handleSave = () => {
+    updateSettings({ displayName, reminderTime, tone });
+    toast({
+      title: "Settings saved",
+      description: "Your preferences will stick across sessions.",
+    });
+    onOpenChange(false);
   };
 
   return (
@@ -136,7 +157,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => onOpenChange(false)}>
+          <Button onClick={handleSave}>
             Save Changes
           </Button>
         </div>

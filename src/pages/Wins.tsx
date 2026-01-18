@@ -16,10 +16,12 @@ import { Win, GrowthNote } from "@/lib/mockData";
 import { Trophy, Sparkles, RefreshCw, CheckCircle, TrendingUp, Heart } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
+type DisplayWin = Win & { emoji?: string };
+
 export default function Wins() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [period, setPeriod] = useState<'week' | '30'>('week');
-  const [wins, setWins] = useState<Win[]>([]);
+  const [wins, setWins] = useState<DisplayWin[]>([]);
   const [growthNotes, setGrowthNotes] = useState<GrowthNote[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -38,10 +40,14 @@ export default function Wins() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const { wins: w, growthNotes: g } = await generateWinsApi({ period });
-      setWins(Array.isArray(w) ? w : []);
+      const { wins: w, growthNotes: g } = await generateWinsApi({ checkInData: checkIns, period });
+      const normalizedWins: DisplayWin[] = Array.isArray(w)
+        ? w.map((win) => ({ ...win, emoji: (win as DisplayWin).emoji ?? "🏆" }))
+        : [];
+      setWins(normalizedWins);
       setGrowthNotes(Array.isArray(g) ? g : []);
-    } catch {
+    } catch (error) {
+      console.error('Error generating wins:', error);
       setWins([]);
       setGrowthNotes([]);
     } finally {
@@ -131,11 +137,11 @@ export default function Wins() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-4 h-4 text-success" />
+                      <span className="text-lg">{win.emoji ?? "🏆"}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-foreground">{win.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{win.evidence}</p>
+                      <p className="text-sm text-muted-foreground mt-1 italic">"{win.evidence}"</p>
                     </div>
                   </div>
                 </div>

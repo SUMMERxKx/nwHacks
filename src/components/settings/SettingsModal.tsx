@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Divider } from "@/components/ui/Divider";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -26,7 +25,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const { settings, updateSettings } = useSettings();
   const [displayName, setDisplayName] = useState(settings.displayName);
   const [reminderTime, setReminderTime] = useState(settings.reminderTime);
-  const [tone, setTone] = useState(settings.tone);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -34,7 +32,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
     if (open) {
       setDisplayName(settings.displayName);
       setReminderTime(settings.reminderTime);
-      setTone(settings.tone);
     }
   }, [open, settings]);
 
@@ -49,7 +46,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   };
 
   const handleSave = () => {
-    updateSettings({ displayName, reminderTime, tone });
+    updateSettings({ displayName, reminderTime });
     toast({
       title: "Settings saved",
       description: "Your preferences will stick across sessions.",
@@ -89,54 +86,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
             />
             <p className="text-xs text-muted-foreground">
               You'll get a gentle nudge to check in at this time.
-            </p>
-          </div>
-
-          <Divider />
-
-          {/* Tone Preference */}
-          <div className="space-y-3">
-            <Label>Buddy Tone</Label>
-            <RadioGroup value={tone} onValueChange={setTone} className="space-y-2">
-              <div className="flex items-center space-x-3">
-                <RadioGroupItem value="direct" id="direct" />
-                <Label htmlFor="direct" className="font-normal cursor-pointer">
-                  <span className="font-medium">Direct</span>
-                  <span className="text-muted-foreground"> — Straight to the point</span>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3">
-                <RadioGroupItem value="balanced" id="balanced" />
-                <Label htmlFor="balanced" className="font-normal cursor-pointer">
-                  <span className="font-medium">Balanced</span>
-                  <span className="text-muted-foreground"> — Friendly and clear</span>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3">
-                <RadioGroupItem value="gentle" id="gentle" />
-                <Label htmlFor="gentle" className="font-normal cursor-pointer">
-                  <span className="font-medium">Gentle</span>
-                  <span className="text-muted-foreground"> — Warm and supportive</span>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <Divider />
-
-          {/* Data Controls */}
-          <div className="space-y-3">
-            <Label className="text-muted-foreground">Data Controls</Label>
-            <div className="flex gap-3">
-              <Button variant="outline" size="sm" disabled className="flex-1">
-                Export Data
-              </Button>
-              <Button variant="outline" size="sm" disabled className="flex-1 text-destructive hover:text-destructive">
-                Delete Account
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              These features will be available once you create an account.
             </p>
           </div>
 

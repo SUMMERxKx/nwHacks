@@ -65,8 +65,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/10 p-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-secondary/30 p-4">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(34,197,94,0.05),transparent_50%)]" aria-hidden />
+      <Card className="relative w-full max-w-md shadow-elevated border-2 border-border/60 backdrop-blur-sm">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-2 justify-center mb-4">
             <div className="p-2 bg-primary/10 rounded-lg">

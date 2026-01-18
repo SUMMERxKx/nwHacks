@@ -11,11 +11,11 @@ interface ChipProps {
 }
 
 const variantStyles = {
-  default: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-  primary: 'bg-primary/10 text-primary hover:bg-primary/15',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/15 text-warning-foreground',
-  muted: 'bg-muted text-muted-foreground hover:bg-muted/80',
+  default: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border/50',
+  primary: 'bg-primary/10 text-primary hover:bg-primary/15 border border-primary/20 shadow-sm',
+  success: 'bg-success/10 text-success border border-success/20 shadow-sm',
+  warning: 'bg-warning/15 text-warning-foreground border border-warning/20 shadow-sm',
+  muted: 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border/50',
 };
 
 const sizeStyles = {
@@ -34,11 +34,11 @@ export function Chip({
   return (
     <span 
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-medium transition-colors",
+        "inline-flex items-center gap-1.5 rounded-full font-medium transition-all",
         variantStyles[variant],
         sizeStyles[size],
-        onClick && "cursor-pointer",
-        active && "ring-2 ring-primary ring-offset-2",
+        onClick && "cursor-pointer hover:scale-105 active:scale-95",
+        active && "ring-2 ring-primary/30 ring-offset-1 shadow-sm",
         className
       )}
       onClick={onClick}

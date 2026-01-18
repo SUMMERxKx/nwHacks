@@ -1,3 +1,7 @@
+/**
+ * Patterns: hasEnoughData = checkIns.length >= 3 (useCheckInData). Generate calls generatePatterns callable.
+ * Period 7|30; pattern cards: title, meaning, evidence, experiment, confidence.
+ */
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chip } from "@/components/ui/Chip";
@@ -6,24 +10,30 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonCard } from "@/components/ui/SkeletonLoader";
 import { ConfidenceChip } from "@/components/ui/ConfidenceChip";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import { mockPatterns, mockCheckIns, PatternInsight } from "@/lib/mockData";
+import { useCheckInData } from "@/hooks/useCheckInData";
+import { generatePatterns as generatePatternsApi } from "@/lib/aiApi";
+import { PatternInsight } from "@/lib/mockData";
 import { TrendingUp, Sparkles, Quote, Lightbulb, RefreshCw } from "lucide-react";
 
 export default function Patterns() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [period, setPeriod] = useState<'7' | '30'>('30');
-  const [patterns, setPatterns] = useState<PatternInsight[]>(mockPatterns);
+  const [patterns, setPatterns] = useState<PatternInsight[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const hasEnoughData = mockCheckIns.length >= 3;
+  const { checkIns } = useCheckInData();
+  const hasEnoughData = checkIns.length >= 3;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    // TODO: Replace with actual pattern generation Cloud Function
-    setTimeout(() => {
-      setPatterns(mockPatterns);
+    try {
+      const result = await generatePatternsApi({ period });
+      setPatterns(Array.isArray(result) ? result : []);
+    } catch {
+      setPatterns([]);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   return (

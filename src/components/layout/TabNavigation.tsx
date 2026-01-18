@@ -1,3 +1,6 @@
+/**
+ * Bottom tab bar: Home, Buddy, Patterns, Wins. Uses NavLink; active state by pathname.
+ */
 import { cn } from "@/lib/utils";
 import { NavLink, useLocation } from "react-router-dom";
 import { 

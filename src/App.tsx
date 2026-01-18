@@ -1,3 +1,10 @@
+/**
+ * App.tsx — Root component: providers and routing.
+ *
+ * - /login: Login (no layout, no ProtectedRoute).
+ * - /, /buddy, /patterns, /wins: AppLayout + TabNavigation; ProtectedRoute (redirect to /login if not signed in).
+ * - *: NotFound.
+ */
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";

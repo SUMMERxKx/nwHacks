@@ -1,3 +1,7 @@
+/**
+ * Wraps routes that require auth. onAuthStateChanged: if no user, redirect to /login; else render children.
+ * Shows a skeleton while resolving auth.
+ */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";

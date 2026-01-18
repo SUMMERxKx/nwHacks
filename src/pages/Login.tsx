@@ -1,3 +1,6 @@
+/**
+ * Login (/login): email/password sign-in and sign-up. Firebase Auth; on success navigate to /.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, AuthError } from "firebase/auth";

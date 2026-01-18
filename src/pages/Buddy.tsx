@@ -1,15 +1,17 @@
 /**
- * Buddy: chat UI. Messages from buddyChat callable (OpenRouter). Memory Snapshot from mockData for display.
+ * Buddy: chat UI. Messages from buddyChat callable (OpenRouter). Memory Snapshot from actual check-in data.
  * contextDays 7|30; quick prompts when empty; typing indicator while waiting.
  */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import { mockMemorySnapshot, ChatMessage } from "@/lib/mockData";
+import { ChatMessage } from "@/lib/mockData";
 import { buddyChat } from "@/lib/aiApi";
+import { getAllCheckIns } from "@/lib/firebaseService";
+import type { CheckInData } from "@/lib/firebaseService";
 import { 
   Send, 
   ChevronDown, 
@@ -32,6 +34,74 @@ const quickPrompts = [
   "What pattern do you notice?"
 ];
 
+// Generate memory insights from check-in data
+function generateMemorySnapshot(data: CheckInData[]) {
+  if (data.length === 0) {
+    return {
+      commonStressors: ["No check-ins yet"],
+      restoresEnergy: ["Start logging to see patterns"],
+      peakProductivity: "Keep reflecting on your patterns",
+      avgMood: 0,
+      avgStress: 0,
+      avgEnergy: 0
+    };
+  }
+
+  // Parse stressors and energy boosters from prompts
+  const allStressed = data
+    .flatMap(d => d.prompts.stressed?.split(/[,;]/).map(s => s.trim()).filter(Boolean) || [])
+    .filter(Boolean);
+  
+  const allProud = data
+    .flatMap(d => d.prompts.proud?.split(/[,;]/).map(s => s.trim()).filter(Boolean) || [])
+    .filter(Boolean);
+
+  // Count frequencies
+  const stressorCounts: Record<string, number> = {};
+  const energyCounts: Record<string, number> = {};
+
+  allStressed.forEach(s => {
+    stressorCounts[s] = (stressorCounts[s] || 0) + 1;
+  });
+
+  allProud.forEach(p => {
+    energyCounts[p] = (energyCounts[p] || 0) + 1;
+  });
+
+  const topStressors = Object.entries(stressorCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([stress]) => stress);
+
+  const topEnergy = Object.entries(energyCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([energy]) => energy);
+
+  // Calculate averages
+  const avgMood = Math.round(data.reduce((sum, d) => sum + d.ratings.mood, 0) / data.length);
+  const avgStress = Math.round(data.reduce((sum, d) => sum + d.ratings.stress, 0) / data.length);
+  const avgEnergy = Math.round(data.reduce((sum, d) => sum + d.ratings.energy, 0) / data.length);
+
+  // Determine peak productivity time (based on high focus + high energy)
+  const highProductivityDays = data
+    .filter(d => d.ratings.focus >= 7 && d.ratings.energy >= 7)
+    .map(d => new Date(d.date).toLocaleDateString('en-US', { weekday: 'long' }));
+  
+  const peakDay = highProductivityDays.length > 0 
+    ? highProductivityDays[0]
+    : "Varies - keep tracking!";
+
+  return {
+    commonStressors: topStressors.length > 0 ? topStressors : ["Track more to see patterns"],
+    restoresEnergy: topEnergy.length > 0 ? topEnergy : ["Track more to see patterns"],
+    peakProductivity: `Best focus on ${peakDay}s (Avg: ${avgEnergy}/10 energy)`,
+    avgMood,
+    avgStress,
+    avgEnergy
+  };
+}
+
 export default function Buddy() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -39,6 +109,7 @@ export default function Buddy() {
   const [isTyping, setIsTyping] = useState(false);
   const [memoryExpanded, setMemoryExpanded] = useState(false);
   const [contextDays, setContextDays] = useState<7 | 30>(30);
+  const [checkInData, setCheckInData] = useState<CheckInData[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -48,6 +119,19 @@ export default function Buddy() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load check-in data on mount
+  useEffect(() => {
+    const loadCheckIns = async () => {
+      try {
+        const data = await getAllCheckIns();
+        setCheckInData(data);
+      } catch (error) {
+        console.error('Error loading check-ins:', error);
+      }
+    };
+    loadCheckIns();
+  }, []);
 
   const handleSend = async (content: string) => {
     if (!content.trim()) return;
@@ -64,7 +148,7 @@ export default function Buddy() {
     setIsTyping(true);
 
     try {
-      const { content: reply } = await buddyChat({ message: content.trim(), contextDays });
+      const { content: reply } = await buddyChat({ message: content.trim(), contextDays, checkInData });
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -92,6 +176,11 @@ export default function Buddy() {
       minute: '2-digit' 
     });
   };
+
+  // Generate memory snapshot from check-in data
+  const memorySnapshot = useMemo(() => {
+    return generateMemorySnapshot(checkInData);
+  }, [checkInData]);
 
   return (
     <>
@@ -159,7 +248,7 @@ export default function Buddy() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Common stressors</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {mockMemorySnapshot.commonStressors.map((s, i) => (
+                  {memorySnapshot.commonStressors.map((s, i) => (
                     <Chip key={i} variant="muted" size="sm">{s}</Chip>
                   ))}
                 </div>
@@ -167,14 +256,14 @@ export default function Buddy() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Restores energy</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {mockMemorySnapshot.restoresEnergy.map((s, i) => (
+                  {memorySnapshot.restoresEnergy.map((s, i) => (
                     <Chip key={i} variant="success" size="sm">{s}</Chip>
                   ))}
                 </div>
               </div>
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Peak productivity</p>
-                <p className="text-sm">{mockMemorySnapshot.peakProductivity}</p>
+                <p className="text-sm">{memorySnapshot.peakProductivity}</p>
               </div>
             </div>
           )}

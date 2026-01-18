@@ -12,7 +12,7 @@ import { ConfidenceChip } from "@/components/ui/ConfidenceChip";
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { useCheckInData } from "@/hooks/useCheckInData";
 import { generatePatterns as generatePatternsApi } from "@/lib/aiApi";
-import { PatternInsight } from "@/lib/mockData";
+import type { PatternInsight } from "@/lib/mockData";
 import { TrendingUp, Sparkles, Quote, Lightbulb, RefreshCw } from "lucide-react";
 
 export default function Patterns() {
@@ -27,9 +27,10 @@ export default function Patterns() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const result = await generatePatternsApi({ period });
+      const result = await generatePatternsApi({ checkInData: checkIns, period });
       setPatterns(Array.isArray(result) ? result : []);
-    } catch {
+    } catch (error) {
+      console.error('Error generating patterns:', error);
       setPatterns([]);
     } finally {
       setIsGenerating(false);

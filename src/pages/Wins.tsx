@@ -179,15 +179,15 @@ export default function Wins() {
           {!isGenerating && wins.length === 0 && growthNotes.length === 0 && hasData && (
             <div className="card-elevated p-8 text-center">
               <div className="space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto">
-                  <Trophy className="w-8 h-8 text-emerald-600" />
+                <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mx-auto">
+                  <Trophy className="w-8 h-8 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     Ready to celebrate your wins?
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Click "Generate" to see your top wins and growth notes.
+                    Click "Generate" to surface real wins from your recent reflections.
                   </p>
                 </div>
                 <Button onClick={handleGenerate} size="lg" className="gap-2">

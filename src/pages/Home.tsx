@@ -16,6 +16,7 @@ import { useCheckInData } from "@/hooks/useCheckInData";
 import { usePromptTemplates } from "@/hooks/usePromptTemplates";
 import { getCheckInByDate, getDefaultPrompts, saveCheckIn } from "@/lib/firebaseService";
 import type { PromptResponse } from "@/lib/prompts";
+import { normalizePrompts } from "@/lib/prompts";
 import {
   Calendar,
   ChevronLeft,
@@ -66,7 +67,11 @@ export default function Home() {
           setEnergy(firebaseData.ratings.energy);
           setMood(firebaseData.ratings.mood);
           setFocus(firebaseData.ratings.focus);
-          setPrompts(firebaseData.prompts || getDefaultPrompts(template));
+          setProud(firebaseData.prompts.proud ?? "");
+          setStressed(firebaseData.prompts.stressed ?? "");
+          setChallenge(firebaseData.prompts.challenge ?? "");
+          setGrateful(firebaseData.prompts.grateful ?? "");
+          setIntention(firebaseData.prompts.intention ?? "");
           setShowCheckInSection(true);
         } else {
           // Reset for new day
@@ -74,7 +79,11 @@ export default function Home() {
           setEnergy(5);
           setMood(5);
           setFocus(5);
-          setPrompts(getDefaultPrompts(template));
+          setProud("");
+          setStressed("");
+          setChallenge("");
+          setGrateful("");
+          setIntention("");
           setShowCheckInSection(false);
         }
       } catch (error) {
@@ -86,7 +95,7 @@ export default function Home() {
     };
 
     loadCheckIn();
-  }, [dateKey]);
+  }, [dateKey, template]);
 
   // When the template changes and we're editing a new/unsaved check-in, merge in the new template
   // while preserving any answers already typed.
@@ -134,7 +143,7 @@ export default function Home() {
       await saveCheckIn({
         date: dateKey,
         ratings: { stress, energy, mood, focus },
-        prompts,
+        prompts: { proud, stressed, challenge, grateful, intention }
       });
       await reloadCheckIns();
       setHasUnsavedChanges(false);
@@ -311,6 +320,7 @@ export default function Home() {
             </Card>
 
             {/* Text Prompts */}
+<<<<<<< HEAD
             <Card className="p-4 space-y-3 border-dashed border-muted-foreground/40">
               <div className="text-sm font-medium">Customize questions (future check-ins)</div>
               <div className="flex gap-2">

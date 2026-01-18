@@ -13,7 +13,10 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import { DEFAULT_PROMPTS, type PromptResponse, buildPromptsFromTemplate } from './prompts';
+import { DEFAULT_PROMPTS, type PromptResponse, normalizePrompts } from './prompts';
+
+// Support both old format (Record<string, string>) and new format (PromptResponse[])
+export type CheckInPrompts = PromptResponse[] | Record<string, string>;
 
 export interface CheckInData {
   id?: string;
@@ -25,34 +28,15 @@ export interface CheckInData {
     mood: number;
     focus: number;
   };
-  prompts: PromptResponse[];
+  prompts: CheckInPrompts;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-function sanitizePrompts(input?: unknown): PromptResponse[] {
-  if (!Array.isArray(input)) {
-    return DEFAULT_PROMPTS.map((p) => ({ ...p, answer: '' }));
-  }
-
-  const seen = new Set<string>();
-  return input
-    .filter((p) => p && typeof p === 'object')
-    .map((p) => ({
-      id: typeof p.id === 'string' && p.id.trim() ? p.id.trim() : `custom-${Math.random().toString(36).slice(2, 8)}`,
-      question:
-        typeof (p as PromptResponse).question === 'string' && (p as PromptResponse).question.trim()
-          ? (p as PromptResponse).question.trim()
-          : 'Journal',
-      answer: typeof (p as PromptResponse).answer === 'string' ? (p as PromptResponse).answer : '',
-    }))
-    .filter((p) => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    });
+// Helper to get default prompts from template
+export function getDefaultPrompts(template: PromptResponse[]): PromptResponse[] {
+  return template.map((p) => ({ ...p, answer: '' }));
 }
-
 // Save check-in data
 export async function saveCheckIn(checkInData: Omit<CheckInData, 'userId' | 'id' | 'createdAt' | 'updatedAt'>) {
   try {
@@ -72,7 +56,6 @@ export async function saveCheckIn(checkInData: Omit<CheckInData, 'userId' | 'id'
 
     await setDoc(docRef, {
       ...checkInData,
-      prompts: sanitizePrompts(checkInData.prompts),
       userId,
       createdAt: docSnap.exists() ? docSnap.data().createdAt : now,
       updatedAt: now,
@@ -100,12 +83,7 @@ export async function getCheckInByDate(date: string) {
     );
 
     const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return null;
-    const data = docSnap.data() as CheckInData;
-    return {
-      ...data,
-      prompts: sanitizePrompts(data.prompts),
-    };
+    return docSnap.exists() ? (docSnap.data() as CheckInData) : null;
   } catch (error) {
     console.error('Error fetching check-in:', error);
     return null;
@@ -125,13 +103,7 @@ export async function getCheckInsByDateRange(startDate: string, endDate: string)
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => {
-      const data = doc.data() as CheckInData;
-      return {
-        ...data,
-        prompts: sanitizePrompts(data.prompts),
-      };
-    });
+    return querySnapshot.docs.map(doc => doc.data() as CheckInData);
   } catch (error) {
     console.error('Error fetching check-ins:', error);
     return [];
@@ -146,24 +118,11 @@ export async function getAllCheckIns() {
 
     const q = query(collection(db, 'users', userId, 'checkIns'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => {
-      const data = doc.data() as CheckInData;
-      return {
-        ...data,
-        prompts: sanitizePrompts(data.prompts),
-      };
-    });
+    return querySnapshot.docs.map(doc => doc.data() as CheckInData);
   } catch (error) {
     console.error('Error fetching all check-ins:', error);
     return [];
   }
-}
-
-export function getDefaultPrompts(template?: PromptResponse[]): PromptResponse[] {
-  if (template && Array.isArray(template) && template.length > 0) {
-    return buildPromptsFromTemplate(template);
-  }
-  return DEFAULT_PROMPTS.map((p) => ({ ...p }));
 }
 
 // Delete check-in

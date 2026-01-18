@@ -1,52 +1,57 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * AI API: calls /api/buddy-chat, /api/generate-patterns, /api/generate-wins (Vercel serverless).
- * For Spark plan: no Cloud Functions; use these APIs. Auth: Bearer <idToken>.
- * Base: VITE_AI_API_URL (optional; '' = same-origin /api).
+ * AI API wrapper - calls local aiService.ts which uses OpenAI API directly
+ * For development with Spark plan (no Cloud Functions)
  */
-import { auth } from './firebase';
+import { buddyChat as buddyChatAI, generatePatterns as generatePatternsAI, generateWins as generateWinsAI } from './aiService';
 import type { PatternInsight, Win, GrowthNote } from './mockData';
+import type { CheckInData } from './firebaseService';
 
-const BASE = (import.meta.env.VITE_AI_API_URL as string) || '';
-
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const user = auth.currentUser;
-  if (!user) throw new Error('Not signed in');
-  const token = await user.getIdToken();
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  };
+export async function buddyChat(params: { message: string; contextDays: 7 | 30; history?: { role: string; content: string }[] }): Promise<{ content: string }> {
+  try {
+    const conversationHistory = params.history || [];
+    const content = await buddyChatAI(params.message, conversationHistory as any);
+    return { content };
+  } catch (error) {
+    console.error('Buddy chat error:', error);
+    throw error;
+  }
 }
 
-export async function buddyChat(params: { message: string; contextDays: 7 | 30 }): Promise<{ content: string }> {
-  const res = await fetch(`${BASE}/api/buddy-chat`, {
-    method: 'POST',
-    headers: await getAuthHeaders(),
-    body: JSON.stringify({ message: params.message, contextDays: params.contextDays }),
-  });
-  if (!res.ok) throw new Error(res.statusText || 'buddy-chat failed');
-  const data = (await res.json()) as { content?: string };
-  return { content: typeof data?.content === 'string' ? data.content : '' };
+export async function generatePatterns(checkInData: CheckInData[]): Promise<PatternInsight[]> {
+  try {
+    const patterns = await generatePatternsAI(checkInData);
+    return patterns.map((p: any) => ({
+      pattern: p.pattern || '',
+      insight: p.insight || '',
+      confidence: p.confidence || 0.5,
+      quote: p.quote || '',
+    }));
+  } catch (error) {
+    console.error('Generate patterns error:', error);
+    return [];
+  }
 }
 
-export async function generatePatterns(params: { period: 7 | 30 }): Promise<PatternInsight[]> {
-  const res = await fetch(`${BASE}/api/generate-patterns`, {
-    method: 'POST',
-    headers: await getAuthHeaders(),
-    body: JSON.stringify({ period: params.period }),
-  });
-  if (!res.ok) throw new Error(res.statusText || 'generate-patterns failed');
-  const data = (await res.json()) as unknown;
-  return Array.isArray(data) ? data : [];
-}
-
-export async function generateWins(params: { period: 'week' | '30' }): Promise<{ wins: Win[]; growthNotes: GrowthNote[] }> {
-  const res = await fetch(`${BASE}/api/generate-wins`, {
-    method: 'POST',
-    headers: await getAuthHeaders(),
-    body: JSON.stringify({ period: params.period }),
-  });
-  if (!res.ok) throw new Error(res.statusText || 'generate-wins failed');
-  const d = (await res.json()) as { wins?: Win[]; growthNotes?: GrowthNote[] };
-  return { wins: Array.isArray(d?.wins) ? d.wins : [], growthNotes: Array.isArray(d?.growthNotes) ? d.growthNotes : [] };
+export async function generateWins(checkInData: CheckInData[]): Promise<{ wins: Win[]; growthNotes: GrowthNote[] }> {
+  try {
+    const wins = await generateWinsAI(checkInData);
+    return {
+      wins: wins.map((w: any) => ({
+        title: w.win || 'Great progress',
+        description: w.impact || '',
+        emoji: w.emoji || '⭐',
+        date: new Date().toISOString(),
+      })),
+      growthNotes: [
+        {
+          id: Date.now().toString(),
+          content: 'Keep celebrating your progress!',
+        },
+      ],
+    };
+  } catch (error) {
+    console.error('Generate wins error:', error);
+    return { wins: [], growthNotes: [] };
+  }
 }

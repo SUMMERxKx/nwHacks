@@ -1,31 +1,32 @@
 # Wellness Buddy
 
-Daily check-ins (Firestore), AI Buddy, Patterns, Wins. **Firebase Spark (free)** + **Vercel** for AI — no Cloud Functions.
+Daily check-ins (Firestore), AI Buddy, Patterns, Wins. Built with React, Firebase, and OpenAI.
 
 ---
 
 ## Quick start
 
 ```bash
-npm i && npm run dev
+bun install && bun run dev
 ```
 
-- **Root `.env`**: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, etc.  
-- See **FIREBASE_SETUP.md** / **FIRESTORE_SETUP.md**.
+- **`.env.local`**: Add Firebase and OpenAI keys (see `.env.example`)
+- See **FIREBASE_SETUP.md** / **FIRESTORE_SETUP.md** for setup
 
 ---
 
-## AI (Buddy, Patterns, Wins) — Spark + Vercel
+## AI Integration (Buddy, Patterns, Wins)
 
-AI runs in **Vercel serverless** (`/api/*`), so you can keep Firebase on **Spark**.
+AI runs locally in React using OpenAI API directly (development only):
 
-1. **Deploy to Vercel** (connects to your Git or `vercel` CLI).
-2. **Env in Vercel**:
-   - `OPENROUTER_API_KEY` — OpenRouter key.
-   - `FIREBASE_SERVICE_ACCOUNT_JSON` — Full JSON of the Firebase service account (Project settings → Service accounts → Generate new private key).
-3. **Local with API**: `vercel dev` (not `npm run dev`). Put the same env in `.env`.
+1. **Get OpenAI API Key**: https://platform.openai.com/api-keys
+2. **Add to `.env.local`**:
+   ```
+   VITE_OPENAI_API_KEY=sk-...your-key...
+   ```
+3. **Run locally**: `bun run dev` (localhost only)
 
-→ **api/README.md** for routes and details.
+The Buddy chat, Patterns, and Wins features use OpenAI's GPT models directly from your React app.
 
 ---
 

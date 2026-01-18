@@ -13,7 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import { DEFAULT_PROMPTS, normalizePrompts, type PromptResponse, buildPromptsFromTemplate } from './prompts';
+import { DEFAULT_PROMPTS, type PromptResponse, buildPromptsFromTemplate } from './prompts';
 
 export interface CheckInData {
   id?: string;
@@ -31,7 +31,26 @@ export interface CheckInData {
 }
 
 function sanitizePrompts(input?: unknown): PromptResponse[] {
-  return normalizePrompts(input);
+  if (!Array.isArray(input)) {
+    return DEFAULT_PROMPTS.map((p) => ({ ...p, answer: '' }));
+  }
+
+  const seen = new Set<string>();
+  return input
+    .filter((p) => p && typeof p === 'object')
+    .map((p) => ({
+      id: typeof p.id === 'string' && p.id.trim() ? p.id.trim() : `custom-${Math.random().toString(36).slice(2, 8)}`,
+      question:
+        typeof (p as PromptResponse).question === 'string' && (p as PromptResponse).question.trim()
+          ? (p as PromptResponse).question.trim()
+          : 'Journal',
+      answer: typeof (p as PromptResponse).answer === 'string' ? (p as PromptResponse).answer : '',
+    }))
+    .filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
 }
 
 // Save check-in data

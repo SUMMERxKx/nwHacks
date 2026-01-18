@@ -2,32 +2,31 @@
  * Home (/): dashboard + inline check-in. useCheckInData, getCheckInByDate, saveCheckIn (Firestore).
  * Date picker, streak, ratings + prompts, save with unsaved/saved banners.
  */
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RatingSlider } from "@/components/ui/RatingSlider";
 import { TextAreaWithCounter } from "@/components/ui/TextAreaWithCounter";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineBanner } from "@/components/ui/InlineBanner";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SettingsModal } from "@/components/settings/SettingsModal";
+import { Input } from "@/components/ui/input";
 import { useCheckInData } from "@/hooks/useCheckInData";
-import { getCheckInByDate, saveCheckIn, getDefaultPrompts } from "@/lib/firebaseService";
-import type { PromptResponse } from "@/lib/prompts";
 import { usePromptTemplates } from "@/hooks/usePromptTemplates";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Save, 
-  Flame, 
-  ClipboardCheck,
-  Sparkles,
+import { getCheckInByDate, getDefaultPrompts, saveCheckIn } from "@/lib/firebaseService";
+import type { PromptResponse } from "@/lib/prompts";
+import {
   Calendar,
-  Pencil
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  Flame,
+  Pencil,
+  Save,
+  Sparkles,
 } from "lucide-react";
 import { formatDateFull } from "@/lib/mockData";
-import { Input } from "@/components/ui/input";
 
 export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -36,26 +35,27 @@ export default function Home() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { template, updateQuestion, addQuestion, deleteQuestion, error: templateError } = usePromptTemplates();
+
+  const { template, addQuestion, deleteQuestion, error: templateError } = usePromptTemplates();
   const [newQuestion, setNewQuestion] = useState("");
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [draftQuestion, setDraftQuestion] = useState("");
-  
+
   // Ratings
   const [stress, setStress] = useState(5);
   const [energy, setEnergy] = useState(5);
   const [mood, setMood] = useState(5);
   const [focus, setFocus] = useState(5);
-  
+
   const [prompts, setPrompts] = useState<PromptResponse[]>(getDefaultPrompts(template));
 
-  const { getStreakCount, checkIns } = useCheckInData();
+  const { getStreakCount, checkIns, reloadCheckIns } = useCheckInData();
   const streak = getStreakCount();
-  const dateKey = selectedDate.toISOString().split('T')[0];
-  const isToday = dateKey === new Date().toISOString().split('T')[0];
-  const existingCheckIn = checkIns.find(c => c.date === dateKey);
+  const dateKey = selectedDate.toISOString().split("T")[0];
+  const isToday = dateKey === new Date().toISOString().split("T")[0];
+  const existingCheckIn = checkIns.find((c) => c.date === dateKey);
 
-  // Load existing check-in from Firebase
+  // Load existing check-in from Firebase when date changes.
   useEffect(() => {
     const loadCheckIn = async () => {
       setIsLoading(true);
@@ -86,7 +86,20 @@ export default function Home() {
     };
 
     loadCheckIn();
-  }, [dateKey, template]);
+  }, [dateKey]);
+
+  // When the template changes and we're editing a new/unsaved check-in, merge in the new template
+  // while preserving any answers already typed.
+  useEffect(() => {
+    if (existingCheckIn || !showCheckInSection) return;
+    setPrompts((prev) => {
+      const fromTemplate = getDefaultPrompts(template);
+      return fromTemplate.map((p) => {
+        const existing = prev.find((item) => item.id === p.id);
+        return { ...p, answer: existing?.answer ?? "" };
+      });
+    });
+  }, [template, existingCheckIn, showCheckInSection]);
 
   const handleChange = () => {
     setHasUnsavedChanges(true);
@@ -96,9 +109,6 @@ export default function Home() {
 
   const updatePrompt = (id: PromptResponse["id"], patch: Partial<PromptResponse>) => {
     setPrompts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-    if (patch.question !== undefined) {
-      updateQuestion(id, patch.question);
-    }
     setHasUnsavedChanges(true);
   };
 
@@ -112,7 +122,7 @@ export default function Home() {
     setHasUnsavedChanges(true);
   };
 
-  const handleDeleteQuestion = (id: PromptResponse['id']) => {
+  const handleDeleteQuestion = (id: PromptResponse["id"]) => {
     deleteQuestion(id);
     setPrompts((prev) => prev.filter((p) => p.id !== id));
     setHasUnsavedChanges(true);
@@ -126,19 +136,21 @@ export default function Home() {
         ratings: { stress, energy, mood, focus },
         prompts,
       });
+      await reloadCheckIns();
       setHasUnsavedChanges(false);
       setShowSavedBanner(true);
       setTimeout(() => setShowSavedBanner(false), 3000);
     } catch (error) {
       console.error("Error saving check-in:", error);
+      alert("Failed to save. Check console and Firebase rules.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const navigateDate = (direction: 'prev' | 'next') => {
+  const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    newDate.setDate(newDate.getDate() + (direction === "next" ? 1 : -1));
     if (newDate <= new Date()) {
       setSelectedDate(newDate);
     }
@@ -158,10 +170,7 @@ export default function Home() {
 
   return (
     <>
-      <PageHeader
-        title="Home"
-        onSettingsClick={() => setSettingsOpen(true)}
-      />
+      <PageHeader title="Home" onSettingsClick={() => setSettingsOpen(true)} />
 
       {showSavedBanner && (
         <InlineBanner
@@ -174,11 +183,7 @@ export default function Home() {
       )}
 
       {hasUnsavedChanges && !showSavedBanner && (
-        <InlineBanner
-          variant="info"
-          title="You have unsaved changes"
-          className="mb-4"
-        />
+        <InlineBanner variant="info" title="You have unsaved changes" className="mb-4" />
       )}
 
       <div className="space-y-6">
@@ -194,7 +199,7 @@ export default function Home() {
             {streak > 0 && (
               <Chip variant="primary" size="md">
                 <Flame className="w-4 h-4" />
-                {streak} day{streak !== 1 ? 's' : ''}
+                {streak} day{streak !== 1 ? "s" : ""}
               </Chip>
             )}
           </div>
@@ -208,22 +213,22 @@ export default function Home() {
               <span className="font-medium">Daily Check-In</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7"
-                onClick={() => navigateDate('prev')}
+                onClick={() => navigateDate("prev")}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <span className="text-sm font-medium min-w-[100px] text-center">
-                {isToday ? 'Today' : formatDateFull(selectedDate).split(',').slice(0, 2).join(',')}
+                {isToday ? "Today" : formatDateFull(selectedDate).split(",").slice(0, 2).join(",")}
               </span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7"
-                onClick={() => navigateDate('next')}
+                onClick={() => navigateDate("next")}
                 disabled={isToday}
               >
                 <ChevronRight className="w-4 h-4" />
@@ -232,24 +237,14 @@ export default function Home() {
           </div>
 
           {!showCheckInSection && !existingCheckIn ? (
-            <Button
-              onClick={startNewCheckIn}
-              variant="default"
-              className="w-full gap-2"
-            >
+            <Button onClick={startNewCheckIn} variant="default" className="w-full gap-2">
               <ClipboardCheck className="w-4 h-4" />
               {isToday ? "Start today's check-in" : "Add reflection"}
             </Button>
           ) : existingCheckIn && !showCheckInSection ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                ✓ Check-in completed for this day
-              </p>
-              <Button
-                onClick={startNewCheckIn}
-                variant="outline"
-                className="w-full"
-              >
+              <p className="text-sm text-muted-foreground">✓ Check-in completed for this day</p>
+              <Button onClick={startNewCheckIn} variant="outline" className="w-full">
                 Edit Check-In
               </Button>
             </div>
@@ -265,39 +260,51 @@ export default function Home() {
                 <Sparkles className="w-4 h-4" />
                 How are you feeling?
               </div>
-              
+
               <RatingSlider
                 label="Stress Level"
                 helperText="How stressed do you feel right now?"
                 value={stress}
-                onChange={(v) => { setStress(v); handleChange(); }}
+                onChange={(v) => {
+                  setStress(v);
+                  handleChange();
+                }}
                 lowLabel="Calm"
                 highLabel="Overwhelmed"
               />
-              
+
               <RatingSlider
                 label="Energy"
                 helperText="How's your physical and mental energy?"
                 value={energy}
-                onChange={(v) => { setEnergy(v); handleChange(); }}
+                onChange={(v) => {
+                  setEnergy(v);
+                  handleChange();
+                }}
                 lowLabel="Drained"
                 highLabel="Energized"
               />
-              
+
               <RatingSlider
                 label="Mood"
                 helperText="Overall emotional state"
                 value={mood}
-                onChange={(v) => { setMood(v); handleChange(); }}
+                onChange={(v) => {
+                  setMood(v);
+                  handleChange();
+                }}
                 lowLabel="Low"
                 highLabel="Great"
               />
-              
+
               <RatingSlider
                 label="Focus"
                 helperText="Ability to concentrate today"
                 value={focus}
-                onChange={(v) => { setFocus(v); handleChange(); }}
+                onChange={(v) => {
+                  setFocus(v);
+                  handleChange();
+                }}
                 lowLabel="Scattered"
                 highLabel="Laser-focused"
               />
@@ -317,7 +324,9 @@ export default function Home() {
                 </Button>
               </div>
               {templateError && <p className="text-xs text-destructive">{templateError}</p>}
-              <p className="text-xs text-muted-foreground">Edits here won’t change past check-ins; they become defaults for new ones.</p>
+              <p className="text-xs text-muted-foreground">
+                New questions become defaults for future days. Edits here don’t change past check-ins.
+              </p>
             </Card>
 
             {prompts.map((prompt) => (
@@ -329,7 +338,7 @@ export default function Home() {
                       if (editingQuestionId === prompt.id) setDraftQuestion(e.target.value);
                     }}
                     readOnly={editingQuestionId !== prompt.id}
-                    className={`text-sm ${editingQuestionId === prompt.id ? '' : 'cursor-default select-none'}`}
+                    className={`text-sm ${editingQuestionId === prompt.id ? "" : "cursor-default select-none"}`}
                   />
                   {editingQuestionId === prompt.id ? (
                     <Button

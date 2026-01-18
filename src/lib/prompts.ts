@@ -16,7 +16,11 @@ const BASE_DEFAULT_QUESTIONS: Record<string, string> = {
   journal: 'Free journal space for anything on your mind',
 };
 
-export const PROMPT_ORDER: PromptId[] = ['proud', 'stressed', 'challenge', 'grateful', 'intention', 'journal'];
+// Canonical default order now limited to three essentials; others can be added by the user.
+export const PROMPT_ORDER: PromptId[] = ['proud', 'stressed', 'journal'];
+
+// Legacy defaults we removed; filter these out when rebuilding prompts/templates.
+export const LEGACY_REMOVED_IDS: PromptId[] = ['challenge', 'grateful', 'intention'];
 
 export const DEFAULT_PROMPTS: PromptResponse[] = PROMPT_ORDER.map((id) => ({
   id,
@@ -24,12 +28,29 @@ export const DEFAULT_PROMPTS: PromptResponse[] = PROMPT_ORDER.map((id) => ({
   answer: '',
 }));
 
+function orderPrompts(template: PromptResponse[]): PromptResponse[] {
+  const defaultsInOrder = PROMPT_ORDER.map((id) => {
+    const found = template.find((p) => p.id === id);
+    return {
+      id,
+      question: found?.question?.trim() || BASE_DEFAULT_QUESTIONS[id] || 'Journal',
+      answer: '',
+    };
+  });
+
+  const customPrompts = template
+    .filter((p) => !PROMPT_ORDER.includes(p.id) && !LEGACY_REMOVED_IDS.includes(p.id))
+    .map((p, idx) => ({
+      id: p.id || `custom-${idx}`,
+      question: p.question?.trim() || 'Journal',
+      answer: '',
+    }));
+
+  return [...defaultsInOrder, ...customPrompts];
+}
+
 export function buildPromptsFromTemplate(template: PromptResponse[]): PromptResponse[] {
-  return template.map((p) => ({
-    id: p.id,
-    question: p.question.trim() || 'Journal',
-    answer: '',
-  }));
+  return orderPrompts(template);
 }
 
 export function normalizePrompts(input?: unknown): PromptResponse[] {

@@ -21,9 +21,9 @@ export function TabNavigation() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-3 left-0 right-0 z-50">
+    <nav className="fixed bottom-4 left-0 right-0 z-50">
       <div className="max-w-3xl mx-auto px-4">
-        <ul className="flex items-center justify-around rounded-2xl border border-border/70 bg-card/90 backdrop-blur-md shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] py-2">
+        <ul className="flex items-center justify-around rounded-2xl border-2 border-border/60 bg-card/95 backdrop-blur-xl shadow-elevated py-2.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = location.pathname === tab.path;

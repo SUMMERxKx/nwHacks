@@ -23,21 +23,21 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card/90 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] px-4 py-4 sm:px-6 sm:py-5",
+        "relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card backdrop-blur-sm px-6 py-5",
         className
       )}
     >
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60 opacity-80" aria-hidden />
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" aria-hidden />
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {badge && (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary border border-primary/20">
               {badge}
             </span>
           )}
-          <h1 className="text-2xl font-semibold font-serif text-foreground sm:text-3xl">{title}</h1>
+          <h1 className="text-3xl font-semibold text-foreground tracking-tight">{title}</h1>
           {subtitle && (
-            <div className="text-sm text-muted-foreground max-w-2xl">
+            <div className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
               {typeof subtitle === "string" ? <p>{subtitle}</p> : subtitle}
             </div>
           )}

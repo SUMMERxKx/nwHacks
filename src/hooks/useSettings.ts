@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type BuddyTone = "direct" | "balanced" | "gentle";
-
 export interface UserSettings {
   displayName: string;
   reminderTime: string; // HH:MM 24h
-  tone: BuddyTone;
 }
 
 const STORAGE_KEY = "nw-buddy-settings";
@@ -13,7 +10,6 @@ const STORAGE_KEY = "nw-buddy-settings";
 const DEFAULT_SETTINGS: UserSettings = {
   displayName: "Alex",
   reminderTime: "20:00",
-  tone: "balanced",
 };
 
 function loadSettings(): UserSettings {

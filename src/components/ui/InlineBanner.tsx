@@ -48,15 +48,15 @@ export function InlineBanner({
 
   return (
     <div className={cn(
-      "flex items-start gap-3 p-4 rounded-lg border animate-fade-in",
+      "flex items-start gap-4 p-4 rounded-xl border-2 border-border/60 bg-card/95 backdrop-blur-sm shadow-sm animate-fade-in",
       config.bgClass,
       className
     )}>
       <Icon className={cn("w-5 h-5 flex-shrink-0 mt-0.5", config.iconClass)} />
       <div className="flex-1 min-w-0">
-        <p className={cn("text-sm font-medium", config.titleClass)}>{title}</p>
+        <p className={cn("text-sm font-semibold", config.titleClass)}>{title}</p>
         {description && (
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{description}</p>
         )}
       </div>
       {onDismiss && (

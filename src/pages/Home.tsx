@@ -1,3 +1,7 @@
+/**
+ * Home (/): dashboard + inline check-in. useCheckInData, getCheckInByDate, saveCheckIn (Firestore).
+ * Date picker, streak, ratings + prompts, save with unsaved/saved banners.
+ */
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RatingSlider } from "@/components/ui/RatingSlider";

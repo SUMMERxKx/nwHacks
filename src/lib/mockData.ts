@@ -1,5 +1,7 @@
-// Mock data for the Buddy app
-// TODO: Replace with Firebase Firestore integration
+/**
+ * Types and mock data for Buddy, Patterns, Wins. Also: formatDate, formatDateFull, getStreakCount(CheckInEntry[]).
+ * Check-in source of truth is Firestore (firebaseService); mocks are fallback/examples only.
+ */
 
 export interface CheckInEntry {
   id: string;

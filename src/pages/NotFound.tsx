@@ -1,3 +1,6 @@
+/**
+ * 404 page for unknown routes. Link back to /.
+ */
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 

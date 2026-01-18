@@ -1,10 +1,15 @@
+/**
+ * Buddy: chat UI. Messages from buddyChat callable (OpenRouter). Memory Snapshot from mockData for display.
+ * contextDays 7|30; quick prompts when empty; typing indicator while waiting.
+ */
 import { useState, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import { mockChatMessages, mockMemorySnapshot, ChatMessage } from "@/lib/mockData";
+import { mockMemorySnapshot, ChatMessage } from "@/lib/mockData";
+import { buddyChat } from "@/lib/aiApi";
 import { 
   Send, 
   ChevronDown, 
@@ -29,7 +34,7 @@ const quickPrompts = [
 
 export default function Buddy() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [memoryExpanded, setMemoryExpanded] = useState(false);
@@ -44,7 +49,7 @@ export default function Buddy() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = (content: string) => {
+  const handleSend = async (content: string) => {
     if (!content.trim()) return;
 
     const userMessage: ChatMessage = {
@@ -58,17 +63,26 @@ export default function Buddy() {
     setInputValue("");
     setIsTyping(true);
 
-    // TODO: Replace with actual OpenAI Cloud Function call
-    setTimeout(() => {
+    try {
+      const { content: reply } = await buddyChat({ message: content.trim(), contextDays });
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "That's a thoughtful reflection. Based on your recent check-ins, I notice this connects to the pattern of needing protected focus time. Would you like to explore strategies for that?",
+        content: reply || "I'm having a moment — try again in a bit.",
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, assistantMessage]);
+    } catch {
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm having a moment — try again in a bit. Your check-ins are saved.",
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const formatTime = (timestamp: string) => {

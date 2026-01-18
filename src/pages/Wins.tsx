@@ -1,34 +1,52 @@
-import { useState } from "react";
+/**
+ * Wins: hasData = checkIns.length > 0. Consistency from getCheckInsByDateRange(weekStart, weekEnd).
+ * Generate calls generateWins callable → wins + growthNotes. Period 'week'|'30'.
+ */
+import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonCard } from "@/components/ui/SkeletonLoader";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import { mockWins, mockGrowthNotes, mockCheckIns, Win, GrowthNote } from "@/lib/mockData";
+import { useCheckInData } from "@/hooks/useCheckInData";
+import { generateWins as generateWinsApi } from "@/lib/aiApi";
+import { toYYYYMMDD, getWeekStart, getWeekEnd } from "@/lib/utils";
+import { Win, GrowthNote } from "@/lib/mockData";
 import { Trophy, Sparkles, RefreshCw, CheckCircle, TrendingUp, Heart } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 export default function Wins() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [period, setPeriod] = useState<'week' | '30'>('week');
-  const [wins, setWins] = useState<Win[]>(mockWins);
-  const [growthNotes, setGrowthNotes] = useState<GrowthNote[]>(mockGrowthNotes);
+  const [wins, setWins] = useState<Win[]>([]);
+  const [growthNotes, setGrowthNotes] = useState<GrowthNote[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const hasData = mockCheckIns.length > 0;
-  const consistencyDays = 5;
-  const totalDays = 7;
-  const consistencyPercent = (consistencyDays / totalDays) * 100;
+  const { checkIns, getCheckInsByDateRange } = useCheckInData();
+  const hasData = checkIns.length > 0;
 
-  const handleGenerate = () => {
+  const { consistencyDays, totalDays, consistencyPercent } = useMemo(() => {
+    const totalDays = 7;
+    const weekStart = getWeekStart(new Date());
+    const weekEnd = getWeekEnd(new Date());
+    const weekCheckIns = getCheckInsByDateRange(toYYYYMMDD(weekStart), toYYYYMMDD(weekEnd));
+    const consistencyDays = weekCheckIns.length;
+    return { consistencyDays, totalDays, consistencyPercent: (consistencyDays / totalDays) * 100 };
+  }, [checkIns, getCheckInsByDateRange]);
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    // TODO: Replace with actual wins generation Cloud Function
-    setTimeout(() => {
-      setWins(mockWins);
-      setGrowthNotes(mockGrowthNotes);
+    try {
+      const { wins: w, growthNotes: g } = await generateWinsApi({ period });
+      setWins(Array.isArray(w) ? w : []);
+      setGrowthNotes(Array.isArray(g) ? g : []);
+    } catch {
+      setWins([]);
+      setGrowthNotes([]);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   return (

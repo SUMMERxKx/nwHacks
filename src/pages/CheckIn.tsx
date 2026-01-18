@@ -1,3 +1,7 @@
+/**
+ * Alternate check-in screen (not in tabs). Uses mockCheckIns for streak; getCheckInByDate/saveCheckIn for Firestore.
+ * Can be wired to useCheckInData for consistency with Home/Patterns/Wins.
+ */
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RatingSlider } from "@/components/ui/RatingSlider";

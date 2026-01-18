@@ -1,3 +1,7 @@
+/**
+ * Loads all check-ins from Firestore (getAllCheckIns) and exposes:
+ * checkIns, isLoading, error, getLastNCheckIns, getAverageRating, getCheckInsByDateRange, getStreakCount.
+ */
 import { useState, useEffect } from 'react';
 import { getAllCheckIns, CheckInData } from '@/lib/firebaseService';
 

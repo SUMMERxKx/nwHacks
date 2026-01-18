@@ -1,3 +1,7 @@
+/**
+ * Firestore CRUD for check-ins. Path: users/{userId}/checkIns/{date}.
+ * All functions require auth.currentUser. Dates are YYYY-MM-DD.
+ */
 import { 
   collection, 
   doc, 
@@ -7,7 +11,6 @@ import {
   where, 
   getDocs, 
   Timestamp,
-  QueryConstraint 
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 

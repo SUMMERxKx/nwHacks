@@ -1,3 +1,6 @@
+/**
+ * Shell for authenticated pages: max-w container, main content, fixed bottom TabNavigation.
+ */
 import { ReactNode } from "react";
 import { TabNavigation } from "./TabNavigation";
 
